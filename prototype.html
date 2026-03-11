@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Margin Account — Interactive Prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #e8ecf1;
+    color: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 24px;
+    width: 100%;
+    max-width: 600px;
+  }
+  .page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0b1828;
+    margin-bottom: 6px;
+  }
+  .page-header .subtitle {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 16px;
+  }
+
+  .mode-switcher {
+    display: inline-flex;
+    background: #fff;
+    border-radius: 12px;
+    padding: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .mode-btn {
+    padding: 8px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+  }
+  .mode-btn.active {
+    background: #0b1828;
+    color: #fff;
+  }
+
+  .breadcrumb {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #9ca3af;
+    min-height: 18px;
+  }
+  .breadcrumb span { color: #6b7280; font-weight: 600; }
+
+  .prototype-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: #fff;
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
+    position: relative;
+    user-select: none;
+  }
+  .phone-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .view {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .view.active { display: flex; }
+  .view.slide-in-right { display: flex; animation: slideInRight 0.25s ease-out forwards; }
+  .view.slide-in-left { display: flex; animation: slideInLeft 0.25s ease-out forwards; }
+  .view.slide-out-right { display: flex; animation: slideOutRight 0.25s ease-out forwards; }
+  .view.slide-out-left { display: flex; animation: slideOutLeft 0.25s ease-out forwards; }
+
+  @keyframes slideInRight { from { transform: translateX(100%); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+  @keyframes slideOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-100%); opacity: 0; } }
+
+  .success-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,200,83,0.92);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100; color: #fff;
+  }
+  .success-overlay.show { display: flex; animation: fadeIn 0.2s ease-out; }
+  .success-checkmark {
+    width: 80px; height: 80px;
+    border: 4px solid #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; margin-bottom: 16px;
+    animation: scaleIn 0.3s ease-out;
+  }
+  .success-overlay .label { font-size: 20px; font-weight: 700; }
+  .success-overlay .sublabel { font-size: 14px; opacity: 0.85; margin-top: 4px; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scaleIn { from { transform: scale(0.5); } to { transform: scale(1); } }
+
+  .toast {
+    position: absolute; bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1a1a2e; color: #fff;
+    padding: 12px 24px; border-radius: 12px;
+    font-size: 14px; font-weight: 600;
+    z-index: 90; opacity: 0; pointer-events: none;
+    transition: all 0.3s; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .status-bar {
+    background: #0b1828; height: 54px;
+    display: flex; align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 28px 8px; color: #fff;
+    font-size: 15px; font-weight: 600; flex-shrink: 0;
+  }
+  .status-bar .time { font-size: 16px; }
+  .status-bar .icons { display: flex; gap: 6px; font-size: 12px; }
+  .status-bar .icons span { opacity: 0.9; }
+
+  .header {
+    background: #0b1828; padding: 12px 24px 18px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; flex-shrink: 0;
+  }
+  .header .close-btn {
+    position: absolute; right: 24px; top: 50%;
+    transform: translateY(-50%); color: #fff;
+    font-size: 22px; opacity: 0.7; cursor: pointer;
+    padding: 4px 8px; transition: opacity 0.15s;
+  }
+  .header .close-btn:hover { opacity: 1; }
+
+  .toggle-group {
+    display: flex; background: rgba(255,255,255,0.1);
+    border-radius: 24px; padding: 4px;
+  }
+  .toggle-btn {
+    padding: 8px 24px; border-radius: 20px;
+    font-size: 14px; font-weight: 600;
+    color: rgba(255,255,255,0.5); cursor: pointer;
+    transition: all 0.2s;
+  }
+  .toggle-btn:hover { color: rgba(255,255,255,0.7); }
+  .toggle-btn.active-buy { background: #00c853; color: #fff; }
+  .toggle-btn.active-sell { background: #f44336; color: #fff; }
+  .toggle-btn.active-real { background: #2196f3; color: #fff; }
+  .toggle-btn.active-cfd { background: rgba(255,255,255,0.2); color: #fff; }
+
+  .settlement-row {
+    background: #0b1828; padding: 0 24px 16px;
+    display: flex; gap: 8px; justify-content: center; flex-shrink: 0;
+  }
+
+  .body-content { padding: 20px 24px; background: #fff; flex: 1; }
+
+  .input-mode-toggle {
+    display: flex; background: #f0f0f0;
+    border-radius: 10px; padding: 3px; margin-bottom: 14px;
+  }
+  .input-mode-btn {
+    flex: 1; text-align: center; padding: 8px 0;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    color: #6b7280; cursor: pointer; transition: all 0.2s;
+  }
+  .input-mode-btn.active {
+    background: #fff; color: #1a1a2e;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .input-box {
+    background: #f5f7fa; border-radius: 12px;
+    padding: 16px 20px; display: flex;
+    justify-content: space-between; align-items: center;
+    margin-bottom: 6px; cursor: pointer;
+  }
+  .input-box .label { color: #6b7280; font-size: 15px; }
+  .input-box .value { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+
+  .sub-label {
+    text-align: right; font-size: 13px; color: #6b7280;
+    margin-bottom: 20px; padding-right: 4px;
+  }
+
+  .leverage-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #e3f2fd; color: #1565c0;
+    padding: 6px 14px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; margin-bottom: 20px;
+  }
+  .leverage-badge .lock { font-size: 11px; }
+
+  .instrument-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid #f0f0f0;
+  }
+  .instrument-left { display: flex; align-items: center; gap: 12px; }
+  .instrument-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #fff;
+  }
+  .instrument-icon.aapl { background: #333; }
+  .instrument-icon.tsla { background: #c62828; }
+  .instrument-icon.msft { background: #0078d4; }
+  .instrument-info .ticker { font-weight: 700; font-size: 16px; }
+  .instrument-info .name { font-size: 13px; color: #6b7280; }
+  .instrument-price { text-align: right; font-weight: 700; font-size: 16px; }
+  .market-status { font-size: 12px; color: #6b7280; padding: 4px 0 12px; }
+  .market-status .dot {
+    display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: #00c853;
+    margin-right: 4px; vertical-align: middle;
+  }
+
+  .detail-row {
+    display: flex; justify-content: space-between;
+    align-items: center; padding: 14px 0;
+    border-bottom: 1px solid #f0f0f0; font-size: 14px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .label { color: #6b7280; }
+  .detail-row .value { font-weight: 600; text-align: right; }
+  .detail-row .value.green { color: #00c853; }
+  .detail-row .value.red { color: #f44336; }
+
+  .divider { height: 1px; background: #e5e7eb; margin: 4px 0; }
+
+  .btn {
+    width: 100%; padding: 16px; border: none;
+    border-radius: 28px; font-size: 17px; font-weight: 700;
+    cursor: pointer; margin-top: 20px; letter-spacing: 0.3px;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.9; }
+  .btn-buy { background: #00c853; color: #fff; }
+  .btn-sell { background: #f44336; color: #fff; }
+  .btn-disabled { background: #d1d5db; color: #9ca3af; cursor: not-allowed; }
+
+  .btn-outline {
+    background: transparent; border: 2px solid #1a1a2e;
+    color: #1a1a2e; padding: 10px 20px; border-radius: 24px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    display: inline-block; transition: background 0.15s;
+  }
+  .btn-outline:hover { background: rgba(0,0,0,0.04); }
+  .btn-outline.small { font-size: 13px; padding: 8px 16px; }
+
+  .btn-green-outline {
+    background: transparent; border: 2px solid #00c853;
+    color: #00c853; padding: 10px 20px; border-radius: 24px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    display: inline-block; transition: background 0.15s;
+  }
+  .btn-green-outline:hover { background: rgba(0,200,83,0.06); }
+
+  .disclosure {
+    text-align: center; font-size: 12px; color: #9ca3af;
+    margin-top: 14px; line-height: 1.4; padding: 0 8px;
+  }
+
+  .error-box {
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 10px; padding: 14px 16px; margin-top: 8px;
+  }
+  .error-box .title { color: #dc2626; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .error-box .text { color: #7f1d1d; font-size: 13px; line-height: 1.4; }
+
+  .sltp-section { margin-top: 6px; margin-bottom: 4px; }
+  .sltp-row {
+    display: flex; justify-content: space-between;
+    align-items: center; padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .sltp-row:last-child { border-bottom: none; }
+  .sltp-left { display: flex; align-items: center; gap: 10px; }
+  .sltp-label { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+  .sltp-toggle {
+    width: 44px; height: 24px; border-radius: 12px;
+    position: relative; cursor: pointer; transition: background 0.2s;
+  }
+  .sltp-toggle.off { background: #e5e7eb; }
+  .sltp-toggle.on { background: #00c853; }
+  .sltp-toggle .knob {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; position: absolute; top: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: left 0.2s;
+  }
+  .sltp-toggle.off .knob { left: 2px; }
+  .sltp-toggle.on .knob { left: 22px; }
+  .sltp-value { font-size: 14px; color: #6b7280; }
+  .sltp-value.set { font-weight: 600; color: #1a1a2e; }
+  .sltp-chevron { font-size: 16px; color: #d1d5db; margin-left: 4px; }
+
+  .portfolio-bg { background: #f5f7fa; flex: 1; }
+  .margin-overview {
+    background: #fff; border-radius: 16px; padding: 20px;
+    margin: 16px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .margin-overview .section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: #6b7280; margin-bottom: 16px;
+  }
+  .margin-overview .equity-value {
+    font-size: 28px; font-weight: 800; color: #1a1a2e; margin-bottom: 20px;
+  }
+  .margin-overview .metric-row {
+    display: flex; justify-content: space-between;
+    padding: 8px 0; font-size: 14px;
+  }
+  .margin-overview .metric-row .label { color: #6b7280; }
+  .margin-overview .metric-row .value { font-weight: 600; }
+
+  .health-bar-container { margin-top: 16px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+  .health-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 13px; margin-bottom: 8px;
+  }
+  .health-bar-label .label { color: #6b7280; font-weight: 500; }
+  .health-bar-label .value { font-weight: 700; }
+  .health-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+  .health-bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .health-bar .fill.green { background: #00c853; }
+  .health-bar .fill.yellow { background: #ff9800; }
+  .health-bar .fill.red { background: #f44336; }
+
+  .health-badge {
+    display: inline-block; padding: 4px 12px; border-radius: 6px;
+    font-size: 12px; font-weight: 700; margin-top: 8px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .health-badge.safe { background: #e8f5e9; color: #2e7d32; }
+  .health-badge.warning { background: #fff3e0; color: #e65100; }
+  .health-badge.liquidation { background: #ffebee; color: #c62828; }
+
+  .position-card {
+    background: #fff; border-radius: 12px; padding: 16px 20px;
+    margin: 8px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; transition: box-shadow 0.15s, transform 0.1s;
+  }
+  .position-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .position-card:active { transform: scale(0.98); }
+  .position-left { display: flex; align-items: center; gap: 12px; }
+  .position-details .ticker-row { display: flex; align-items: center; gap: 8px; }
+  .position-details .ticker { font-weight: 700; font-size: 15px; }
+  .settlement-badge {
+    font-size: 11px; font-weight: 700; padding: 2px 8px;
+    border-radius: 4px; background: #e3f2fd; color: #1565c0;
+  }
+  .settlement-badge.cfd { background: #f3e5f5; color: #7b1fa2; }
+  .position-details .name { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .position-details .margin-info { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+  .position-right { text-align: right; }
+  .position-right .pnl { font-weight: 700; font-size: 15px; }
+  .position-right .pnl.positive { color: #00c853; }
+  .position-right .pnl.negative { color: #f44336; }
+  .position-right .pct { font-size: 12px; color: #6b7280; }
+
+  .notif-bg { background: #f5f7fa; flex: 1; }
+  .notif-card {
+    margin: 16px 24px; border-radius: 16px; padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .notif-card.yellow { background: #fff8e1; border-left: 4px solid #ff9800; }
+  .notif-card.orange { background: #fff3e0; border-left: 4px solid #ff5722; }
+  .notif-card.red { background: #ffebee; border-left: 4px solid #f44336; }
+  .notif-card .notif-title { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+  .notif-card.yellow .notif-title { color: #e65100; }
+  .notif-card.orange .notif-title { color: #bf360c; }
+  .notif-card.red .notif-title { color: #c62828; }
+  .notif-card .notif-text { font-size: 14px; color: #4a4a4a; line-height: 1.5; margin-bottom: 14px; }
+  .notif-card .notif-data {
+    display: flex; justify-content: space-between;
+    background: rgba(255,255,255,0.6); border-radius: 8px;
+    padding: 10px 14px; font-size: 13px; margin-bottom: 16px;
+  }
+  .notif-card .notif-data .label { color: #6b7280; }
+  .notif-card .notif-data .value { font-weight: 700; }
+  .notif-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .level-chips { display: flex; gap: 8px; padding: 16px 24px 0; }
+  .level-chip {
+    padding: 6px 16px; border-radius: 20px; font-size: 12px;
+    font-weight: 700; cursor: pointer; border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .level-chip.yellow-chip { background: #fff8e1; color: #e65100; border-color: #ff9800; }
+  .level-chip.orange-chip { background: #fff3e0; color: #bf360c; border-color: #ff5722; }
+  .level-chip.inactive { opacity: 0.45; border-color: transparent; }
+
+  .nav-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #fff; border-top: 1px solid #e5e7eb;
+    height: 56px; display: flex; justify-content: space-around;
+    align-items: center; padding: 0 16px; flex-shrink: 0; z-index: 10;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 2px; font-size: 10px; color: #9ca3af; font-weight: 500;
+    cursor: pointer; padding: 4px 8px; transition: color 0.15s;
+  }
+  .nav-item.active { color: #1a1a2e; }
+  .nav-item:hover { color: #6b7280; }
+  .nav-icon {
+    width: 20px; height: 20px; border-radius: 4px;
+    background: #e5e7eb; transition: background 0.15s;
+  }
+  .nav-item.active .nav-icon { background: #1a1a2e; }
+
+  .spacer { height: 70px; flex-shrink: 0; }
+
+  .overview-container { display: none; width: 100%; max-width: 1600px; }
+  .overview-container.active { display: block; }
+  .prototype-container.active { display: flex; }
+  .prototype-container { display: none; }
+
+  .interaction-hint {
+    margin-top: 16px; padding: 10px 20px;
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    font-size: 12px; color: #6b7280;
+    text-align: center; max-width: 390px;
+  }
+  .interaction-hint strong { color: #1a1a2e; }
+
+  .portfolio-header {
+    background: #0b1828; padding: 16px 24px 20px; color: #fff;
+    display: flex; justify-content: space-between;
+    align-items: flex-start; flex-shrink: 0;
+  }
+  .portfolio-header .left div:first-child { font-size: 13px; opacity: 0.6; margin-bottom: 4px; }
+  .portfolio-header .left div:last-child { font-size: 12px; opacity: 0.4; }
+  .bell-icon {
+    font-size: 20px; cursor: pointer; opacity: 0.7;
+    transition: opacity 0.15s; padding: 4px;
+  }
+  .bell-icon:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Margin Account — Interactive Prototype</h1>
+  <p class="subtitle">eToro Phase 1 — Click through the margin account experience</p>
+  <div class="mode-switcher">
+    <button class="mode-btn active" data-mode="prototype">Prototype</button>
+    <button class="mode-btn" data-mode="overview">Overview</button>
+  </div>
+  <div class="breadcrumb" id="breadcrumb"></div>
+</div>
+
+<div class="prototype-container active" id="prototypeContainer">
+  <div class="phone">
+    <div class="phone-inner" id="phoneInner">
+
+      <div class="success-overlay" id="successOverlay">
+        <div class="success-checkmark">&#10003;</div>
+        <div class="label">Order Placed</div>
+        <div class="sublabel" id="successDetail"></div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+      <div class="view active" id="viewTrade">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div>
+        </div>
+        <div class="header">
+          <div class="toggle-group">
+            <div class="toggle-btn" id="btnShort" data-action="set-side-short">Short</div>
+            <div class="toggle-btn active-buy" id="btnBuy" data-action="set-side-buy">Buy</div>
+          </div>
+          <div class="close-btn" data-action="close-trade">&times;</div>
+        </div>
+        <div class="settlement-row">
+          <div class="toggle-group" style="background:rgba(255,255,255,0.08);">
+            <div class="toggle-btn active-real" id="btnReal" data-action="set-settlement-real">Real</div>
+            <div class="toggle-btn" id="btnCfd" data-action="set-settlement-cfd">CFD</div>
+          </div>
+        </div>
+        <div class="body-content" id="tradeBody"></div>
+      </div>
+
+      <div class="view" id="viewPortfolio">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div>
+        </div>
+        <div class="portfolio-header">
+          <div class="left">
+            <div>Margin Account</div>
+            <div>Portfolio</div>
+          </div>
+          <div class="bell-icon" data-action="go-notifications">&#128276;</div>
+        </div>
+        <div class="portfolio-bg">
+          <div class="margin-overview">
+            <div class="section-title">Margin Account Overview</div>
+            <div class="equity-value">$100,000.00</div>
+            <div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">$12,500.00</span></div>
+            <div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">$15,000.00</span></div>
+            <div class="metric-row"><span class="label">Remaining Margin</span><span class="value" style="color:#00c853;">$87,500.00</span></div>
+            <div class="health-bar-container">
+              <div class="health-bar-label">
+                <span class="label">Margin Health</span>
+                <span class="value">667%</span>
+              </div>
+              <div class="health-bar"><div class="fill green" style="width:100%"></div></div>
+              <div class="health-badge safe">Safe</div>
+            </div>
+          </div>
+
+          <div style="padding:12px 24px 8px;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Open Positions</div>
+
+          <div class="position-card" data-action="open-trade" data-instrument="AAPL" data-settlement="real">
+            <div class="position-left">
+              <div class="instrument-icon aapl" style="width:36px;height:36px;font-size:12px;">A</div>
+              <div class="position-details">
+                <div class="ticker-row"><span class="ticker">AAPL</span><span class="settlement-badge">Real x4</span></div>
+                <div class="name">Apple Inc</div>
+                <div class="margin-info">Notional: $25,000 &middot; IMR: $6,250</div>
+              </div>
+            </div>
+            <div class="position-right">
+              <div class="pnl positive">+$1,250.00</div>
+              <div class="pct">+5.2%</div>
+            </div>
+          </div>
+
+          <div class="position-card" data-action="open-trade" data-instrument="TSLA" data-settlement="cfd">
+            <div class="position-left">
+              <div class="instrument-icon tsla" style="width:36px;height:36px;font-size:12px;">T</div>
+              <div class="position-details">
+                <div class="ticker-row"><span class="ticker">TSLA</span><span class="settlement-badge cfd">CFD x20</span></div>
+                <div class="name">Tesla Inc</div>
+                <div class="margin-info">Notional: $18,000 &middot; IMR: $900</div>
+              </div>
+            </div>
+            <div class="position-right">
+              <div class="pnl negative">-$430.00</div>
+              <div class="pct">-2.1%</div>
+            </div>
+          </div>
+
+          <div class="position-card" data-action="open-trade" data-instrument="MSFT" data-settlement="real">
+            <div class="position-left">
+              <div class="instrument-icon msft" style="width:36px;height:36px;font-size:12px;">M</div>
+              <div class="position-details">
+                <div class="ticker-row"><span class="ticker">MSFT</span><span class="settlement-badge">Real x4</span></div>
+                <div class="name">Microsoft Corp</div>
+                <div class="margin-info">Notional: $32,000 &middot; IMR: $8,000</div>
+              </div>
+            </div>
+            <div class="position-right">
+              <div class="pnl positive">+$890.00</div>
+              <div class="pct">+3.8%</div>
+            </div>
+          </div>
+          <div class="spacer"></div>
+        </div>
+        <div class="nav-bar">
+          <div class="nav-item" data-action="nav-watchlist"><div class="nav-icon"></div>Watchlist</div>
+          <div class="nav-item active" data-action="nav-portfolio"><div class="nav-icon"></div>Portfolio</div>
+          <div class="nav-item" data-action="nav-trade"><div class="nav-icon"></div>Trade</div>
+          <div class="nav-item" data-action="nav-notifications"><div class="nav-icon"></div>Feed</div>
+          <div class="nav-item" data-action="nav-more"><div class="nav-icon"></div>More</div>
+        </div>
+      </div>
+
+      <div class="view" id="viewNotifications">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div>
+        </div>
+        <div style="background:#0b1828;padding:16px 24px 20px;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <div style="font-size:14px;font-weight:600;">Notifications</div>
+          <div class="close-btn" data-action="go-portfolio" style="position:static;transform:none;font-size:20px;padding:2px 6px;">&times;</div>
+        </div>
+        <div class="notif-bg">
+          <div class="level-chips">
+            <div class="level-chip yellow-chip" id="chipYellow" data-action="set-notif-yellow">Warning 142%</div>
+            <div class="level-chip orange-chip inactive" id="chipOrange" data-action="set-notif-orange">Alert 112%</div>
+            <div class="level-chip" id="chipLiquidation" data-action="go-liquidation" style="background:#ffebee;color:#c62828;border-color:#f44336;opacity:0.45;">Liquidation</div>
+          </div>
+          <div id="notifContent"></div>
+          <div class="spacer"></div>
+        </div>
+        <div class="nav-bar">
+          <div class="nav-item" data-action="nav-watchlist"><div class="nav-icon"></div>Watchlist</div>
+          <div class="nav-item" data-action="nav-portfolio"><div class="nav-icon"></div>Portfolio</div>
+          <div class="nav-item" data-action="nav-trade"><div class="nav-icon"></div>Trade</div>
+          <div class="nav-item active" data-action="nav-notifications"><div class="nav-icon"></div>Feed</div>
+          <div class="nav-item" data-action="nav-more"><div class="nav-icon"></div>More</div>
+        </div>
+      </div>
+
+      <div class="view" id="viewLiquidation">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div>
+        </div>
+        <div style="background:#0b1828;padding:16px 24px 20px;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <div style="font-size:14px;font-weight:600;">Notifications</div>
+          <div class="close-btn" data-action="go-portfolio" style="position:static;transform:none;font-size:20px;padding:2px 6px;">&times;</div>
+        </div>
+        <div class="notif-bg">
+          <div class="notif-card red">
+            <div class="notif-title">Margin Liquidation</div>
+            <div class="notif-text">Your equity has fallen below the maintenance margin requirement. Positions are being closed automatically to restore your account health.</div>
+            <div class="notif-data">
+              <div><span class="label">Equity</span><br><span class="value">$14,500</span></div>
+              <div><span class="label">Maintenance Margin</span><br><span class="value">$15,000</span></div>
+            </div>
+            <div style="background:rgba(255,255,255,0.6);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;">
+              <span style="color:#c62828;font-weight:700;">Closing:</span> AAPL — highest margin requirement ($6,250)
+            </div>
+            <div class="notif-actions">
+              <button class="btn-outline small" data-action="go-portfolio">View Portfolio</button>
+            </div>
+          </div>
+          <div class="margin-overview" style="margin-top:8px;">
+            <div class="health-bar-container" style="border-top:none;padding-top:0;">
+              <div class="health-bar-label">
+                <span class="label">Margin Health</span>
+                <span class="value" style="color:#c62828;">96.7%</span>
+              </div>
+              <div class="health-bar"><div class="fill red" style="width:97%"></div></div>
+              <div class="health-badge liquidation">Liquidation</div>
+            </div>
+          </div>
+          <div class="spacer"></div>
+        </div>
+        <div class="nav-bar">
+          <div class="nav-item" data-action="nav-watchlist"><div class="nav-icon"></div>Watchlist</div>
+          <div class="nav-item" data-action="nav-portfolio"><div class="nav-icon"></div>Portfolio</div>
+          <div class="nav-item" data-action="nav-trade"><div class="nav-icon"></div>Trade</div>
+          <div class="nav-item active" data-action="nav-notifications"><div class="nav-icon"></div>Feed</div>
+          <div class="nav-item" data-action="nav-more"><div class="nav-icon"></div>More</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="interaction-hint">
+    <strong>Tap anything!</strong> Toggle Buy/Short, Real/CFD, Shares/Amount, SL/TP. Click Buy to execute. Click positions to trade. Use the nav bar to switch screens.
+  </div>
+</div>
+
+<div class="overview-container" id="overviewContainer"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  var instruments = {
+    AAPL: { ticker: 'AAPL', name: 'Apple Inc', price: 175.50, iconClass: 'aapl', iconLetter: 'A' },
+    TSLA: { ticker: 'TSLA', name: 'Tesla Inc', price: 176.00, iconClass: 'tsla', iconLetter: 'T' },
+    MSFT: { ticker: 'MSFT', name: 'Microsoft Corp', price: 420.50, iconClass: 'msft', iconLetter: 'M' }
+  };
+
+  var state = {
+    view: 'trade', prevView: null,
+    side: 'buy', settlement: 'real', inputMode: 'shares',
+    instrument: 'AAPL', sharesValue: 100, amountValue: 5000,
+    slEnabled: false, tpEnabled: false,
+    availableMargin: 87500, notifLevel: 'yellow'
+  };
+
+  function getLeverage() { return state.settlement === 'cfd' ? 20 : 4; }
+
+  function getNotionalValue() {
+    var inst = instruments[state.instrument];
+    return state.inputMode === 'shares' ? state.sharesValue * inst.price : state.amountValue * getLeverage();
+  }
+
+  function getIMR() {
+    return state.inputMode === 'shares'
+      ? (state.sharesValue * instruments[state.instrument].price) / getLeverage()
+      : state.amountValue;
+  }
+
+  function fmt(n) { return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function fmtInt(n) { return '$' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+  function getSLValue() {
+    var p = instruments[state.instrument].price;
+    return '$' + (p * 0.94).toFixed(2) + ' (-6.0%)';
+  }
+  function getTPValue() {
+    var p = instruments[state.instrument].price;
+    return '$' + (p * 1.11).toFixed(2) + ' (+11.0%)';
+  }
+
+  function renderTradeBody() {
+    var inst = instruments[state.instrument];
+    var lev = getLeverage();
+    var notional = getNotionalValue();
+    var imr = getIMR();
+    var remaining = state.availableMargin - imr;
+    var sufficient = remaining >= 0;
+    var isBuy = state.side === 'buy';
+    var isCfd = state.settlement === 'cfd';
+
+    var inputLabel, inputVal, subLabel;
+    if (state.inputMode === 'shares') {
+      inputLabel = isCfd ? 'Units' : 'Shares';
+      inputVal = state.sharesValue.toString();
+      subLabel = fmtInt(notional) + ' Notional Value';
+    } else {
+      inputLabel = 'Amount (USD)';
+      inputVal = fmt(state.amountValue);
+      var shares = notional / inst.price;
+      subLabel = shares.toFixed(2) + (isCfd ? ' Units' : ' Shares') + ' &middot; ' + fmtInt(notional) + ' Notional Value (x' + lev + ')';
+    }
+
+    var d = '';
+    d += '<div class="detail-row"><span class="label">Order Type</span><span class="value">Market Order</span></div>';
+    if (isCfd) d += '<div class="detail-row"><span class="label">Settlement</span><span class="value" style="color:#7b1fa2;font-weight:700;">CFD</span></div>';
+    d += '<div class="detail-row"><span class="label">Est. Opening Cost</span><span class="value">$1.00</span></div>';
+    if (isCfd) {
+      var of_ = (notional * 0.000078).toFixed(2);
+      d += '<div class="detail-row"><span class="label">Overnight Fee</span><span class="value">-$' + of_ + '/day</span></div>';
+    }
+    d += '<div class="divider"></div>';
+    d += '<div class="detail-row"><span class="label">Initial Margin Required</span><span class="value">' + fmt(imr) + '</span></div>';
+    d += '<div class="detail-row"><span class="label">Available Margin</span><span class="value ' + (sufficient ? 'green' : '') + '">' + fmt(state.availableMargin) + '</span></div>';
+    d += '<div class="detail-row"><span class="label">Projected Remaining</span><span class="value ' + (remaining >= 0 ? 'green' : 'red') + '">' + fmt(remaining) + '</span></div>';
+
+    var err = '';
+    if (!sufficient) err = '<div class="error-box"><div class="title">Insufficient Margin</div><div class="text">You need ' + fmt(Math.abs(remaining)) + ' more margin. Reduce amount or close positions.</div></div>';
+
+    var btnClass = sufficient ? (isBuy ? 'btn btn-buy' : 'btn btn-sell') : 'btn btn-disabled';
+    var btnLabel = isBuy ? 'Buy' : 'Short';
+    var btnDis = sufficient ? '' : ' disabled';
+
+    var disc = isCfd
+      ? 'CFD positions incur overnight fees. Leverage is determined by platform rules in a Margin Account.'
+      : (state.inputMode === 'amount'
+        ? 'Leverage is determined by platform rules. The amount you enter is the margin invested; notional exposure = amount \u00d7 leverage.'
+        : 'Leverage is determined by platform rules in a Margin Account.');
+
+    var h = '';
+    h += '<div class="input-mode-toggle">';
+    h += '<div class="input-mode-btn ' + (state.inputMode === 'shares' ? 'active' : '') + '" data-action="set-input-shares">' + (isCfd ? 'Units' : 'Shares') + '</div>';
+    h += '<div class="input-mode-btn ' + (state.inputMode === 'amount' ? 'active' : '') + '" data-action="set-input-amount">Amount</div></div>';
+    h += '<div class="input-box"><span class="label">' + inputLabel + '</span><span class="value">' + inputVal + '</span></div>';
+    h += '<div class="sub-label">' + subLabel + '</div>';
+    h += '<div class="leverage-badge"><span class="lock">&#128274;</span> Applied Leverage: x' + lev + ' (auto)</div>';
+    h += '<div class="instrument-row"><div class="instrument-left">';
+    h += '<div class="instrument-icon ' + inst.iconClass + '">' + inst.iconLetter + '</div>';
+    h += '<div class="instrument-info"><div class="ticker">' + inst.ticker + '</div><div class="name">' + inst.name + '</div></div>';
+    h += '</div><div class="instrument-price">' + inst.price.toFixed(2) + '</div></div>';
+    h += '<div class="market-status"><span class="dot"></span> Market open</div>';
+    h += d;
+    h += '<div class="sltp-section">';
+    h += '<div class="sltp-row"><div class="sltp-left"><div class="sltp-toggle ' + (state.slEnabled ? 'on' : 'off') + '" data-action="toggle-sl"><div class="knob"></div></div><span class="sltp-label">Stop Loss</span></div><div style="display:flex;align-items:center;cursor:pointer" data-action="toggle-sl"><span class="sltp-value ' + (state.slEnabled ? 'set' : '') + '">' + (state.slEnabled ? getSLValue() : 'No SL') + '</span><span class="sltp-chevron">&#8250;</span></div></div>';
+    h += '<div class="sltp-row"><div class="sltp-left"><div class="sltp-toggle ' + (state.tpEnabled ? 'on' : 'off') + '" data-action="toggle-tp"><div class="knob"></div></div><span class="sltp-label">Take Profit</span></div><div style="display:flex;align-items:center;cursor:pointer" data-action="toggle-tp"><span class="sltp-value ' + (state.tpEnabled ? 'set' : '') + '">' + (state.tpEnabled ? getTPValue() : 'No TP') + '</span><span class="sltp-chevron">&#8250;</span></div></div>';
+    h += '</div>';
+    h += err;
+    h += '<button class="' + btnClass + '" data-action="execute-trade"' + btnDis + '>' + btnLabel + '</button>';
+    h += '<div class="disclosure">' + disc + '</div>';
+
+    document.getElementById('tradeBody').innerHTML = h;
+  }
+
+  function renderTradeHeader() {
+    var isBuy = state.side === 'buy';
+    var btnBuy = document.getElementById('btnBuy');
+    var btnShort = document.getElementById('btnShort');
+    btnBuy.className = 'toggle-btn' + (isBuy ? ' active-buy' : '');
+    btnBuy.style.color = isBuy ? '' : 'rgba(255,255,255,0.5)';
+    btnShort.className = 'toggle-btn' + (!isBuy ? ' active-sell' : '');
+    btnShort.style.color = !isBuy ? '' : 'rgba(255,255,255,0.5)';
+
+    var isCfd = state.settlement === 'cfd';
+    var btnReal = document.getElementById('btnReal');
+    var btnCfd = document.getElementById('btnCfd');
+    btnReal.className = 'toggle-btn' + (!isCfd ? ' active-real' : '');
+    btnReal.style.color = !isCfd ? '' : 'rgba(255,255,255,0.4)';
+    btnCfd.className = 'toggle-btn' + (isCfd ? ' active-cfd' : '');
+    btnCfd.style.cssText = isCfd ? 'background:rgba(255,255,255,0.2);color:#fff;' : 'color:rgba(255,255,255,0.4);';
+  }
+
+  function renderNotifications() {
+    var level = state.notifLevel;
+    document.getElementById('chipYellow').className = 'level-chip yellow-chip' + (level !== 'yellow' ? ' inactive' : '');
+    document.getElementById('chipOrange').className = 'level-chip orange-chip' + (level !== 'orange' ? ' inactive' : '');
+    var h = '';
+    if (level === 'yellow') {
+      h += '<div class="notif-card yellow"><div class="notif-title">Margin Warning</div>';
+      h += '<div class="notif-text">Your margin health has dropped to <strong>142%</strong>. Consider reducing positions or adding funds to avoid liquidation.</div>';
+      h += '<div class="notif-data"><div><span class="label">Equity</span><br><span class="value">$21,300</span></div><div><span class="label">Maintenance Margin</span><br><span class="value">$15,000</span></div></div>';
+      h += '<div class="notif-actions"><button class="btn-green-outline" data-action="add-funds">Add Funds</button><button class="btn-outline small" data-action="go-portfolio">View Portfolio</button></div></div>';
+    } else {
+      h += '<div class="notif-card orange"><div class="notif-title">Margin Alert — Action Required</div>';
+      h += '<div class="notif-text">Your margin health has dropped to <strong>112%</strong>. Liquidation will occur at 100%. Take action now.</div>';
+      h += '<div class="notif-data"><div><span class="label">Equity</span><br><span class="value">$16,800</span></div><div><span class="label">Maintenance Margin</span><br><span class="value">$15,000</span></div></div>';
+      h += '<div class="notif-actions"><button class="btn-green-outline" data-action="add-funds">Add Funds</button><button class="btn-outline small" data-action="go-portfolio">Close Positions</button><button class="btn-outline small" data-action="go-portfolio">View Portfolio</button></div></div>';
+    }
+    document.getElementById('notifContent').innerHTML = h;
+  }
+
+  function updateBreadcrumb() {
+    var labels = { trade: 'Trade Ticket', portfolio: 'Portfolio', notifications: 'Notifications', liquidation: 'Liquidation' };
+    var bc = document.getElementById('breadcrumb');
+    if (state.view === 'trade') {
+      var inst = instruments[state.instrument];
+      bc.innerHTML = '<span>' + labels[state.view] + '</span> &mdash; ' + inst.ticker + ' (' + (state.settlement === 'cfd' ? 'CFD' : 'Real') + ', ' + (state.side === 'buy' ? 'Buy' : 'Short') + ')';
+    } else {
+      bc.innerHTML = '<span>' + (labels[state.view] || '') + '</span>';
+    }
+  }
+
+  function navigateTo(viewName, direction) {
+    if (state.view === viewName) return;
+    var cur = document.getElementById('view' + cap(state.view));
+    var nxt = document.getElementById('view' + cap(viewName));
+    if (!cur || !nxt) return;
+    var dir = direction || 'right';
+    state.prevView = state.view;
+    state.view = viewName;
+    cur.className = 'view slide-out-' + (dir === 'right' ? 'left' : 'right');
+    nxt.className = 'view slide-in-' + dir;
+    setTimeout(function() { cur.className = 'view'; nxt.className = 'view active'; }, 260);
+    updateBreadcrumb();
+  }
+
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2000);
+  }
+
+  function showSuccess() {
+    var inst = instruments[state.instrument];
+    var o = document.getElementById('successOverlay');
+    document.getElementById('successDetail').textContent =
+      (state.side === 'buy' ? 'Bought' : 'Shorted') + ' ' + inst.ticker + ' (' + (state.settlement === 'cfd' ? 'CFD' : 'Real') + ')';
+    o.classList.add('show');
+    setTimeout(function() { o.classList.remove('show'); navigateTo('portfolio', 'right'); }, 1400);
+  }
+
+  function render() { renderTradeHeader(); renderTradeBody(); renderNotifications(); updateBreadcrumb(); }
+
+  document.addEventListener('click', function(e) {
+    var target = e.target.closest('[data-action]');
+    if (!target) return;
+    var a = target.getAttribute('data-action');
+    switch (a) {
+      case 'set-side-buy': state.side = 'buy'; render(); break;
+      case 'set-side-short': state.side = 'short'; render(); break;
+      case 'set-settlement-real': state.settlement = 'real'; render(); break;
+      case 'set-settlement-cfd': state.settlement = 'cfd'; render(); break;
+      case 'set-input-shares': state.inputMode = 'shares'; render(); break;
+      case 'set-input-amount': state.inputMode = 'amount'; render(); break;
+      case 'toggle-sl': state.slEnabled = !state.slEnabled; render(); break;
+      case 'toggle-tp': state.tpEnabled = !state.tpEnabled; render(); break;
+      case 'execute-trade': if (!target.disabled) showSuccess(); break;
+      case 'close-trade': navigateTo('portfolio', 'left'); break;
+      case 'go-portfolio': navigateTo('portfolio', 'left'); break;
+      case 'go-notifications': navigateTo('notifications', 'right'); break;
+      case 'go-liquidation': navigateTo('liquidation', 'right'); break;
+      case 'nav-portfolio': navigateTo('portfolio', state.view === 'trade' ? 'right' : 'left'); break;
+      case 'nav-trade': navigateTo('trade', 'left'); break;
+      case 'nav-notifications': navigateTo('notifications', 'right'); break;
+      case 'nav-watchlist': showToast('Watchlist (not in prototype)'); break;
+      case 'nav-more': showToast('More (not in prototype)'); break;
+      case 'add-funds': showToast('Redirecting to deposit...'); break;
+      case 'set-notif-yellow': state.notifLevel = 'yellow'; renderNotifications(); break;
+      case 'set-notif-orange': state.notifLevel = 'orange'; renderNotifications(); break;
+      case 'open-trade':
+        var el = target.closest('[data-instrument]');
+        state.instrument = el.getAttribute('data-instrument');
+        state.settlement = el.getAttribute('data-settlement');
+        state.side = 'buy'; state.inputMode = 'shares';
+        state.sharesValue = 100; state.amountValue = 5000;
+        render(); navigateTo('trade', 'right'); break;
+    }
+  });
+
+  document.addEventListener('wheel', function(e) {
+    var v = e.target.closest('.input-box .value');
+    if (!v) return;
+    e.preventDefault();
+    var d = e.deltaY > 0 ? -1 : 1;
+    if (state.inputMode === 'shares') state.sharesValue = Math.max(1, state.sharesValue + d * 10);
+    else state.amountValue = Math.max(100, state.amountValue + d * 500);
+    render();
+  }, { passive: false });
+
+  var sp = [10, 50, 100, 250, 500, 1000];
+  var ap = [1000, 2500, 5000, 10000, 15000, 50000, 100000];
+  document.addEventListener('click', function(e) {
+    var v = e.target.closest('.input-box .value');
+    if (!v) return;
+    if (state.inputMode === 'shares') {
+      var i = sp.indexOf(state.sharesValue);
+      state.sharesValue = sp[(i + 1) % sp.length];
+    } else {
+      var j = ap.indexOf(state.amountValue);
+      state.amountValue = ap[(j + 1) % ap.length];
+    }
+    render();
+  });
+
+  document.querySelectorAll('.mode-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var mode = this.getAttribute('data-mode');
+      document.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      document.getElementById('prototypeContainer').classList.toggle('active', mode === 'prototype');
+      document.getElementById('overviewContainer').classList.toggle('active', mode === 'overview');
+      document.getElementById('breadcrumb').style.display = mode === 'prototype' ? '' : 'none';
+      if (mode === 'overview') buildOverview();
+    });
+  });
+
+  var ob = false;
+  function buildOverview() {
+    if (ob) return; ob = true;
+    var c = document.getElementById('overviewContainer');
+    c.innerHTML = '<p style="text-align:center;color:#6b7280;font-size:14px;margin:32px 0 16px;">Static overview of all 9 screens. Switch to <strong>Prototype</strong> mode for interactive experience.</p>' +
+      '<iframe src="' + gof() + '" style="width:100%;height:3200px;border:1px solid #e5e7eb;border-radius:16px;" sandbox="allow-same-origin"></iframe>';
+  }
+  function gof() { return window.location.href.replace('prototype.html', 'index.html'); }
+
+  render();
+})();
+</script>
+
+</body>
+</html>
