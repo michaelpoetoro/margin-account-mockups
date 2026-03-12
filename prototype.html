@@ -916,7 +916,7 @@
           <div class="nav-item" data-action="nav-watchlist"><div class="nav-icon"></div>Watchlist</div>
           <div class="nav-item" data-action="nav-portfolio"><div class="nav-icon"></div>Portfolio</div>
           <div class="nav-item" data-action="nav-trade"><div class="nav-icon"></div>Trade</div>
-          <div class="nav-item active" data-action="nav-notifications"><div class="nav-icon"></div>Feed</div>
+          <div class="nav-item" data-action="nav-notifications"><div class="nav-icon"></div>Feed</div>
           <div class="nav-item" data-action="nav-more"><div class="nav-icon"></div>More</div>
         </div>
       </div>
@@ -1020,10 +1020,12 @@
     var lev = getLeverage();
     var notional = getNotionalValue();
     var imr = getIMR();
-    var remaining = state.availableMargin - imr;
+    var cashReq = getCashRequired();
+    var cost = isCfdSettlement() ? imr : cashReq;
+    var remaining = state.availableMargin - cost;
     var sufficient = remaining >= 0;
     var isBuy = state.side === 'buy';
-    var isCfd = state.settlement === 'cfd';
+    var isCfd = isCfdSettlement();
 
     var inputLabel, inputVal, subLabel;
     if (state.inputMode === 'shares') {
@@ -1034,23 +1036,62 @@
       inputLabel = 'Amount (USD)';
       inputVal = fmt(state.amountValue);
       var shares = notional / inst.price;
-      subLabel = shares.toFixed(2) + (isCfd ? ' Units' : ' Shares') + ' &middot; ' + fmtInt(notional) + ' Notional Value (x' + lev + ')';
+      if (isCfd) {
+        subLabel = shares.toFixed(2) + ' Units &middot; ' + fmtInt(notional) + ' Notional Value (x' + lev + ')';
+      } else {
+        subLabel = shares.toFixed(2) + ' Shares &middot; ' + fmtInt(notional) + ' Notional Value (x1)';
+      }
     }
+
+    var html = '';
+    html += '<div class="input-mode-toggle">';
+    html += '<div class="input-mode-btn ' + (state.inputMode === 'shares' ? 'active' : '') + '" data-action="set-input-shares">' + (isCfd ? 'Units' : 'Shares') + '</div>';
+    html += '<div class="input-mode-btn ' + (state.inputMode === 'amount' ? 'active' : '') + '" data-action="set-input-amount">Amount</div>';
+    html += '</div>';
+
+    html += '<div class="input-box"><span class="label">' + inputLabel + '</span><span class="value">' + inputVal + '</span></div>';
+    html += '<div class="sub-label">' + subLabel + '</div>';
+
+    if (isCfd) {
+      html += '<div class="leverage-badge"><span class="lock">&#128274;</span> Applied Leverage: x' + lev + ' (auto)</div>';
+    } else {
+      html += '<div class="leverage-badge" style="background:#e8f5e9;color:#2e7d32;"><span class="lock">&#128274;</span> No Leverage — Real Stock Purchase (x1)</div>';
+    }
+
+    if (inst.supportsNoMargin) {
+      html += '<div class="margin-toggle-wrap">';
+      html += '<div><div class="mt-label">Buy without margin</div>';
+      html += '<div class="mt-sub">Purchase real stock at x1 — no overnight fees, acts as collateral</div></div>';
+      html += '<div class="toggle-switch ' + (state.buyWithoutMargin ? 'on' : 'off') + '" data-action="toggle-no-margin"><div class="knob"></div></div>';
+      html += '</div>';
+    }
+
+    html += '<div class="instrument-row"><div class="instrument-left">';
+    html += '<div class="instrument-icon ' + inst.iconClass + '">' + inst.iconLetter + '</div>';
+    html += '<div class="instrument-info"><div class="ticker">' + inst.ticker + '</div><div class="name">' + inst.name + '</div></div>';
+    html += '</div><div class="instrument-price">' + inst.price.toFixed(2) + '</div></div>';
+    html += '<div class="market-status"><span class="dot"></span> Market open</div>';
 
     var detailRows = '';
     detailRows += '<div class="detail-row"><span class="label">Order Type</span><span class="value">Market Order</span></div>';
     if (isCfd) {
       detailRows += '<div class="detail-row"><span class="label">Settlement</span><span class="value" style="color:#7b1fa2;font-weight:700;">CFD</span></div>';
-    }
-    detailRows += '<div class="detail-row"><span class="label">Est. Opening Cost</span><span class="value">$1.00</span></div>';
-    if (isCfd) {
+      detailRows += '<div class="detail-row"><span class="label">Est. Opening Cost</span><span class="value">$1.00</span></div>';
       var overnightFee = (notional * 0.000078).toFixed(2);
       detailRows += '<div class="detail-row"><span class="label">Overnight Fee</span><span class="value">-$' + overnightFee + '/day</span></div>';
+      detailRows += '<div class="divider"></div>';
+      detailRows += '<div class="detail-row"><span class="label">Initial Margin Required</span><span class="value">' + fmt(imr) + '</span></div>';
+    } else {
+      detailRows += '<div class="detail-row"><span class="label">Settlement</span><span class="value" style="color:#1565c0;font-weight:700;">Real (Fully Paid)</span></div>';
+      detailRows += '<div class="detail-row"><span class="label">Est. Opening Cost</span><span class="value">$1.00</span></div>';
+      detailRows += '<div class="divider"></div>';
+      detailRows += '<div class="detail-row"><span class="label">Cash Required</span><span class="value">' + fmt(cashReq) + '</span></div>';
+      detailRows += '<div class="detail-row"><span class="label">Initial Margin Required</span><span class="value">$0 (fully paid)</span></div>';
     }
-    detailRows += '<div class="divider"></div>';
-    detailRows += '<div class="detail-row"><span class="label">Initial Margin Required</span><span class="value">' + fmt(imr) + '</span></div>';
-    detailRows += '<div class="detail-row"><span class="label">Available Margin</span><span class="value ' + (sufficient ? 'green' : '') + ''>' + fmt(state.availableMargin) + '</span></div>';
-    detailRows += '<div class="detail-row"><span class="label">Projected Remaining</span><span class="value ' + (remaining >= 0 ? 'green' : 'red') + ''>' + fmt(remaining) + '</span></div>';
+    detailRows += '<div class="detail-row"><span class="label">Available Margin</span><span class="value ' + (sufficient ? 'green' : '') + '">' + fmt(state.availableMargin) + '</span></div>';
+    detailRows += '<div class="detail-row"><span class="label">Projected Remaining</span><span class="value ' + (remaining >= 0 ? 'green' : 'red') + '">' + fmt(remaining) + '</span></div>';
+
+    html += detailRows;
 
     var errorHtml = '';
     if (!sufficient) {
@@ -1062,44 +1103,22 @@
     var btnDisabled = sufficient ? '' : ' disabled';
 
     var disclosure = isCfd
-      ? 'CFD positions incur overnight fees. Leverage is determined by platform rules in a Margin Account.'
-      : (state.inputMode === 'amount'
-        ? 'Leverage is determined by platform rules in a Margin Account. The amount you enter is the margin invested; your notional exposure is amount &times; leverage.'
-        : 'Leverage is determined by platform rules in a Margin Account.');
+      ? 'CFD positions incur overnight fees. Leverage and product type are determined by platform rules.'
+      : 'Real stock purchase — no leverage, no overnight fees. Your stock acts as collateral within the Margin Account.';
 
-    var html = '';
-    html += '<div class="input-mode-toggle">';
-    html += '<div class="input-mode-btn ' + (state.inputMode === 'shares' ? 'active' : '') + '" data-action="set-input-shares">' + (isCfd ? 'Units' : 'Shares') + '</div>';
-    html += '<div class="input-mode-btn ' + (state.inputMode === 'amount' ? 'active' : '') + '" data-action="set-input-amount">Amount</div>';
-    html += '</div>';
-
-    html += '<div class="input-box"><span class="label">' + inputLabel + '</span><span class="value">' + inputVal + '</span></div>';
-    html += '<div class="sub-label">' + subLabel + '</div>';
-
-    html += '<div class="leverage-badge"><span class="lock">&#128274;</span> Applied Leverage: x' + lev + ' (auto)</div>';
-
-    html += '<div class="instrument-row"><div class="instrument-left">';
-    html += '<div class="instrument-icon ' + inst.iconClass + '">' + inst.iconLetter + '</div>';
-    html += '<div class="instrument-info"><div class="ticker">' + inst.ticker + '</div><div class="name">' + inst.name + '</div></div>';
-    html += '</div><div class="instrument-price">' + inst.price.toFixed(2) + '</div></div>';
-    html += '<div class="market-status"><span class="dot"></span> Market open</div>';
-
-    html += detailRows;
-
-    // SL / TP
     html += '<div class="sltp-section">';
     html += '<div class="sltp-row"><div class="sltp-left">';
     html += '<div class="sltp-toggle ' + (state.slEnabled ? 'on' : 'off') + '" data-action="toggle-sl"><div class="knob"></div></div>';
     html += '<span class="sltp-label">Stop Loss</span></div>';
     html += '<div style="display:flex;align-items:center;" data-action="toggle-sl" style="cursor:pointer">';
-    html += '<span class="sltp-value ' + (state.slEnabled ? 'set' : '') + ''>' + (state.slEnabled ? getSLValue() : 'No SL') + '</span>';
+    html += '<span class="sltp-value ' + (state.slEnabled ? 'set' : '') + '">' + (state.slEnabled ? getSLValue() : 'No SL') + '</span>';
     html += '<span class="sltp-chevron">&#8250;</span></div></div>';
 
     html += '<div class="sltp-row"><div class="sltp-left">';
     html += '<div class="sltp-toggle ' + (state.tpEnabled ? 'on' : 'off') + '" data-action="toggle-tp"><div class="knob"></div></div>';
     html += '<span class="sltp-label">Take Profit</span></div>';
     html += '<div style="display:flex;align-items:center;" data-action="toggle-tp" style="cursor:pointer">';
-    html += '<span class="sltp-value ' + (state.tpEnabled ? 'set' : '') + ''>' + (state.tpEnabled ? getTPValue() : 'No TP') + '</span>';
+    html += '<span class="sltp-value ' + (state.tpEnabled ? 'set' : '') + '">' + (state.tpEnabled ? getTPValue() : 'No TP') + '</span>';
     html += '<span class="sltp-chevron">&#8250;</span></div></div>';
     html += '</div>';
 
@@ -1108,6 +1127,10 @@
     html += '<div class="disclosure">' + disclosure + '</div>';
 
     document.getElementById('tradeBody').innerHTML = html;
+  }
+
+  function isCfdSettlement() {
+    return getSettlement() === 'cfd';
   }
 
   function renderTradeHeader() {
