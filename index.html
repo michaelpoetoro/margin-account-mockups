@@ -120,14 +120,7 @@
     background: #f44336;
     color: #fff;
   }
-  .toggle-btn.active-real {
-    background: #2196f3;
-    color: #fff;
-  }
-  .toggle-btn.active-cfd {
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-  }
+  /* Product type is system-determined; read-only badge only */
 
   .body-content {
     padding: 20px 24px;
@@ -580,18 +573,75 @@
     color: #1a1a2e;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
+
+  .product-indicator {
+    background: #0b1828;
+    padding: 0 24px 16px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+  }
+  .product-badge-pill {
+    background: rgba(255,255,255,0.12);
+    padding: 6px 16px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .product-badge-pill .badge-type {
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .product-badge-pill .badge-type.cfd { color: #ce93d8; }
+  .product-badge-pill .badge-type.real { color: #64b5f6; }
+  .product-badge-pill .badge-note {
+    color: rgba(255,255,255,0.45);
+    font-size: 11px;
+  }
+  .margin-toggle-wrap {
+    background: #f5f7fa;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .margin-toggle-wrap .mt-label { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+  .margin-toggle-wrap .mt-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    position: relative;
+  }
+  .toggle-switch.off { background: #e5e7eb; }
+  .toggle-switch.on { background: #00c853; }
+  .toggle-switch .knob {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    top: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-switch.off .knob { left: 2px; }
+  .toggle-switch.on .knob { left: 22px; }
 </style>
 </head>
 <body>
 
 <h1>Margin Account — User Journey Mockups</h1>
-<p class="subtitle">eToro Phase 1 — 9 screens covering the complete margin account experience (Real &amp; CFD, trade by shares &amp; by amount)</p>
+<p class="subtitle">eToro Phase 1 — System auto-selects product type &amp; max leverage. "Buy without margin" option for eligible stock assets.</p>
 
 <!-- STEP 1: Trade Ticket Happy Path -->
 <div class="journey-label">Step 1 — Open a Margin Trade (Happy Path)</div>
 <div class="screens">
   <div class="screen-wrapper">
-    <div class="screen-title">Trade by Shares</div>
+    <div class="screen-title">Stock — CFD Default (Shares)</div>
     <div class="phone">
       <div class="status-bar">
         <span class="time">9:41</span>
@@ -605,10 +655,10 @@
         <div class="close-btn">&times;</div>
       </div>
 
-      <div style="background:#0b1828;padding:0 24px 16px;display:flex;gap:8px;justify-content:center;">
-        <div class="toggle-group" style="background:rgba(255,255,255,0.08);">
-          <div class="toggle-btn active-real">Real</div>
-          <div class="toggle-btn" style="color:rgba(255,255,255,0.4)">CFD</div>
+      <div class="product-indicator">
+        <div class="product-badge-pill">
+          <span class="badge-type cfd">CFD</span>
+          <span class="badge-note">Auto-selected · Max leverage</span>
         </div>
       </div>
 
@@ -625,7 +675,15 @@
         <div class="sub-label">$17,550 Notional Value</div>
 
         <div class="leverage-badge">
-          <span class="lock">&#128274;</span> Applied Leverage: x4 (auto)
+          <span class="lock">&#128274;</span> Applied Leverage: x20 (auto)
+        </div>
+
+        <div class="margin-toggle-wrap">
+          <div>
+            <div class="mt-label">Buy without margin</div>
+            <div class="mt-sub">Purchase real stock at x1 — no overnight fees, acts as collateral</div>
+          </div>
+          <div class="toggle-switch off"><div class="knob"></div></div>
         </div>
 
         <div class="instrument-row">
@@ -645,21 +703,29 @@
           <span class="value">Market Order</span>
         </div>
         <div class="detail-row">
+          <span class="label">Settlement</span>
+          <span class="value" style="color:#7b1fa2;font-weight:700;">CFD</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Overnight Fee</span>
+          <span class="value">-$1.37/day</span>
+        </div>
+        <div class="detail-row">
           <span class="label">Est. Opening Cost</span>
           <span class="value">$1.00</span>
         </div>
         <div class="divider"></div>
         <div class="detail-row">
           <span class="label">Initial Margin Required</span>
-          <span class="value">$4,387.50</span>
+          <span class="value">$877.50</span>
         </div>
         <div class="detail-row">
           <span class="label">Available Margin</span>
-          <span class="value green">$87,500.00</span>
+          <span class="value green">$84,850.00</span>
         </div>
         <div class="detail-row">
           <span class="label">Projected Remaining</span>
-          <span class="value green">$83,112.50</span>
+          <span class="value green">$83,972.50</span>
         </div>
 
         <div class="sltp-section">
@@ -686,13 +752,13 @@
         </div>
 
         <button class="btn btn-buy">Buy</button>
-        <div class="disclosure">Leverage is determined by platform rules in a Margin Account.</div>
+        <div class="disclosure">CFD positions incur overnight fees. Leverage and product type are determined by platform rules in a Margin Account.</div>
       </div>
     </div>
   </div>
 
   <div class="screen-wrapper">
-    <div class="screen-title">Trade by Amount</div>
+    <div class="screen-title">Stock — Buy Without Margin (Amount)</div>
     <div class="phone">
       <div class="status-bar">
         <span class="time">9:41</span>
@@ -706,10 +772,10 @@
         <div class="close-btn">&times;</div>
       </div>
 
-      <div style="background:#0b1828;padding:0 24px 16px;display:flex;gap:8px;justify-content:center;">
-        <div class="toggle-group" style="background:rgba(255,255,255,0.08);">
-          <div class="toggle-btn active-real">Real</div>
-          <div class="toggle-btn" style="color:rgba(255,255,255,0.4)">CFD</div>
+      <div class="product-indicator">
+        <div class="product-badge-pill">
+          <span class="badge-type real">Stock (Real)</span>
+          <span class="badge-note">No margin · x1 · Collateral</span>
         </div>
       </div>
 
@@ -723,10 +789,18 @@
           <span class="label">Amount (USD)</span>
           <span class="value">$5,000</span>
         </div>
-        <div class="sub-label">28.49 Shares &middot; $20,000 Notional Value (x4)</div>
+        <div class="sub-label">28.49 Shares &middot; $5,000 Notional Value (x1)</div>
 
-        <div class="leverage-badge">
-          <span class="lock">&#128274;</span> Applied Leverage: x4 (auto)
+        <div class="leverage-badge" style="background:#e8f5e9;color:#2e7d32;">
+          <span class="lock">&#128274;</span> No Leverage — Real Stock Purchase (x1)
+        </div>
+
+        <div class="margin-toggle-wrap">
+          <div>
+            <div class="mt-label">Buy without margin</div>
+            <div class="mt-sub">Purchase real stock at x1 — no overnight fees, acts as collateral</div>
+          </div>
+          <div class="toggle-switch on"><div class="knob"></div></div>
         </div>
 
         <div class="instrument-row">
@@ -746,21 +820,21 @@
           <span class="value">Market Order</span>
         </div>
         <div class="detail-row">
-          <span class="label">Est. Opening Cost</span>
-          <span class="value">$1.00</span>
-        </div>
-        <div class="divider"></div>
-        <div class="detail-row">
-          <span class="label">Initial Margin Required</span>
+          <span class="label">Cash Required</span>
           <span class="value">$5,000.00</span>
         </div>
         <div class="detail-row">
+          <span class="label">Initial Margin Required</span>
+          <span class="value">$0 (fully paid)</span>
+        </div>
+        <div class="divider"></div>
+        <div class="detail-row">
           <span class="label">Available Margin</span>
-          <span class="value green">$87,500.00</span>
+          <span class="value green">$84,850.00</span>
         </div>
         <div class="detail-row">
           <span class="label">Projected Remaining</span>
-          <span class="value green">$82,500.00</span>
+          <span class="value green">$79,850.00</span>
         </div>
 
         <div class="sltp-section">
@@ -787,13 +861,13 @@
         </div>
 
         <button class="btn btn-buy">Buy</button>
-        <div class="disclosure">Leverage is determined by platform rules in a Margin Account. The amount you enter is the margin invested; your notional exposure is amount &times; leverage.</div>
+        <div class="disclosure">Real stock purchase — no leverage, no overnight fees. Your stock acts as collateral within the Margin Account.</div>
       </div>
     </div>
   </div>
 
   <div class="screen-wrapper">
-    <div class="screen-title">Trade CFD — by Amount</div>
+    <div class="screen-title">Stock CFD — Max Leverage (Amount)</div>
     <div class="phone">
       <div class="status-bar">
         <span class="time">9:41</span>
@@ -807,10 +881,10 @@
         <div class="close-btn">&times;</div>
       </div>
 
-      <div style="background:#0b1828;padding:0 24px 16px;display:flex;gap:8px;justify-content:center;">
-        <div class="toggle-group" style="background:rgba(255,255,255,0.08);">
-          <div class="toggle-btn" style="color:rgba(255,255,255,0.4)">Real</div>
-          <div class="toggle-btn active-cfd" style="background:rgba(255,255,255,0.2);color:#fff;">CFD</div>
+      <div class="product-indicator">
+        <div class="product-badge-pill">
+          <span class="badge-type cfd">CFD</span>
+          <span class="badge-note">Auto-selected · Max leverage</span>
         </div>
       </div>
 
@@ -828,6 +902,14 @@
 
         <div class="leverage-badge">
           <span class="lock">&#128274;</span> Applied Leverage: x20 (auto)
+        </div>
+
+        <div class="margin-toggle-wrap">
+          <div>
+            <div class="mt-label">Buy without margin</div>
+            <div class="mt-sub">Purchase real stock at x1 — no overnight fees, acts as collateral</div>
+          </div>
+          <div class="toggle-switch off"><div class="knob"></div></div>
         </div>
 
         <div class="instrument-row">
@@ -906,7 +988,7 @@
 <div class="journey-label">Step 2 — Insufficient Margin (Rejection)</div>
 <div class="screens">
   <div class="screen-wrapper">
-    <div class="screen-title">Insufficient Margin — by Shares</div>
+    <div class="screen-title">Insufficient Margin — CFD (Shares)</div>
     <div class="phone">
       <div class="status-bar">
         <span class="time">9:41</span>
@@ -920,10 +1002,10 @@
         <div class="close-btn">&times;</div>
       </div>
 
-      <div style="background:#0b1828;padding:0 24px 16px;display:flex;gap:8px;justify-content:center;">
-        <div class="toggle-group" style="background:rgba(255,255,255,0.08);">
-          <div class="toggle-btn active-real">Real</div>
-          <div class="toggle-btn" style="color:rgba(255,255,255,0.4)">CFD</div>
+      <div class="product-indicator">
+        <div class="product-badge-pill">
+          <span class="badge-type cfd">CFD</span>
+          <span class="badge-note">Auto-selected · Max leverage</span>
         </div>
       </div>
 
@@ -935,12 +1017,12 @@
 
         <div class="input-box">
           <span class="label">Shares</span>
-          <span class="value">500</span>
+          <span class="value">2,500</span>
         </div>
-        <div class="sub-label">$58,500 Notional Value</div>
+        <div class="sub-label">$292,500 Notional Value</div>
 
         <div class="leverage-badge">
-          <span class="lock">&#128274;</span> Applied Leverage: x4 (auto)
+          <span class="lock">&#128274;</span> Applied Leverage: x20 (auto)
         </div>
 
         <div class="instrument-row">
@@ -958,6 +1040,14 @@
         <div class="detail-row">
           <span class="label">Order Type</span>
           <span class="value">Market Order</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Settlement</span>
+          <span class="value" style="color:#7b1fa2;font-weight:700;">CFD</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Overnight Fee</span>
+          <span class="value">-$6.85/day</span>
         </div>
         <div class="detail-row">
           <span class="label">Est. Opening Cost</span>
@@ -1006,13 +1096,13 @@
         </div>
 
         <button class="btn btn-disabled" disabled>Buy</button>
-        <div class="disclosure">Leverage is determined by platform rules in a Margin Account.</div>
+        <div class="disclosure">CFD positions incur overnight fees. Leverage and product type are determined by platform rules in a Margin Account.</div>
       </div>
     </div>
   </div>
 
   <div class="screen-wrapper">
-    <div class="screen-title">Insufficient Margin — by Amount</div>
+    <div class="screen-title">Insufficient Margin — CFD (Amount)</div>
     <div class="phone">
       <div class="status-bar">
         <span class="time">9:41</span>
@@ -1026,10 +1116,10 @@
         <div class="close-btn">&times;</div>
       </div>
 
-      <div style="background:#0b1828;padding:0 24px 16px;display:flex;gap:8px;justify-content:center;">
-        <div class="toggle-group" style="background:rgba(255,255,255,0.08);">
-          <div class="toggle-btn active-real">Real</div>
-          <div class="toggle-btn" style="color:rgba(255,255,255,0.4)">CFD</div>
+      <div class="product-indicator">
+        <div class="product-badge-pill">
+          <span class="badge-type cfd">CFD</span>
+          <span class="badge-note">Auto-selected · Max leverage</span>
         </div>
       </div>
 
@@ -1043,10 +1133,10 @@
           <span class="label">Amount (USD)</span>
           <span class="value">$15,000</span>
         </div>
-        <div class="sub-label">128.21 Shares &middot; $60,000 Notional Value (x4)</div>
+        <div class="sub-label">2,564.10 Shares &middot; $300,000 Notional Value (x20)</div>
 
         <div class="leverage-badge">
-          <span class="lock">&#128274;</span> Applied Leverage: x4 (auto)
+          <span class="lock">&#128274;</span> Applied Leverage: x20 (auto)
         </div>
 
         <div class="instrument-row">
@@ -1064,6 +1154,14 @@
         <div class="detail-row">
           <span class="label">Order Type</span>
           <span class="value">Market Order</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Settlement</span>
+          <span class="value" style="color:#7b1fa2;font-weight:700;">CFD</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Overnight Fee</span>
+          <span class="value">-$8.22/day</span>
         </div>
         <div class="detail-row">
           <span class="label">Est. Opening Cost</span>
@@ -1112,13 +1210,13 @@
         </div>
 
         <button class="btn btn-disabled" disabled>Buy</button>
-        <div class="disclosure">Leverage is determined by platform rules in a Margin Account. The amount you enter is the margin invested; your notional exposure is amount &times; leverage.</div>
+        <div class="disclosure">CFD positions incur overnight fees. Leverage and product type are determined by platform rules in a Margin Account.</div>
       </div>
     </div>
   </div>
 
   <div class="screen-wrapper">
-    <div class="screen-title">Insufficient Margin — CFD</div>
+    <div class="screen-title">Insufficient Margin — Stock CFD</div>
     <div class="phone">
       <div class="status-bar">
         <span class="time">9:41</span>
@@ -1132,10 +1230,10 @@
         <div class="close-btn">&times;</div>
       </div>
 
-      <div style="background:#0b1828;padding:0 24px 16px;display:flex;gap:8px;justify-content:center;">
-        <div class="toggle-group" style="background:rgba(255,255,255,0.08);">
-          <div class="toggle-btn" style="color:rgba(255,255,255,0.4)">Real</div>
-          <div class="toggle-btn active-cfd" style="background:rgba(255,255,255,0.2);color:#fff;">CFD</div>
+      <div class="product-indicator">
+        <div class="product-badge-pill">
+          <span class="badge-type cfd">CFD</span>
+          <span class="badge-note">Auto-selected · Max leverage</span>
         </div>
       </div>
 
@@ -1153,6 +1251,14 @@
 
         <div class="leverage-badge">
           <span class="lock">&#128274;</span> Applied Leverage: x20 (auto)
+        </div>
+
+        <div class="margin-toggle-wrap">
+          <div>
+            <div class="mt-label">Buy without margin</div>
+            <div class="mt-sub">Purchase real stock at x1 — no overnight fees, acts as collateral</div>
+          </div>
+          <div class="toggle-switch off"><div class="knob"></div></div>
         </div>
 
         <div class="instrument-row">
@@ -1255,21 +1361,21 @@
 
           <div class="metric-row">
             <span class="label">Total Initial Margin</span>
-            <span class="value">$15,150.00</span>
+            <span class="value">$2,500.00</span>
           </div>
           <div class="metric-row">
             <span class="label">Total Maintenance Margin</span>
-            <span class="value">$15,000.00</span>
+            <span class="value">$10,000.00</span>
           </div>
           <div class="metric-row">
             <span class="label">Remaining Margin</span>
-            <span class="value" style="color:#00c853;">$84,850.00</span>
+            <span class="value" style="color:#00c853;">$72,500.00</span>
           </div>
 
           <div class="health-bar-container">
             <div class="health-bar-label">
               <span class="label">Margin Health</span>
-              <span class="value">667%</span>
+              <span class="value">1000%</span>
             </div>
             <div class="health-bar">
               <div class="fill green" style="width:100%"></div>
@@ -1286,10 +1392,10 @@
             <div class="position-details">
               <div class="ticker-row">
                 <span class="ticker">AAPL</span>
-                <span class="settlement-badge">Real x4</span>
+                <span class="settlement-badge">Stock (Real) x1</span>
               </div>
               <div class="name">Apple Inc</div>
-              <div class="margin-info">Notional: $25,000 &middot; IMR: $6,250 &middot; MMR: $5,000</div>
+              <div class="margin-info">Notional: $25,000 &middot; Cash: $25,000 (Collateral)</div>
             </div>
           </div>
           <div class="position-right">
@@ -1322,10 +1428,10 @@
             <div class="position-details">
               <div class="ticker-row">
                 <span class="ticker">MSFT</span>
-                <span class="settlement-badge">Real x4</span>
+                <span class="settlement-badge cfd">CFD x20</span>
               </div>
               <div class="name">Microsoft Corp</div>
-              <div class="margin-info">Notional: $32,000 &middot; IMR: $8,000 &middot; MMR: $6,400</div>
+              <div class="margin-info">Notional: $32,000 &middot; IMR: $1,600 &middot; MMR: $6,400</div>
             </div>
           </div>
           <div class="position-right">
