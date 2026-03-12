@@ -258,17 +258,22 @@
   .toggle-btn:hover { color: rgba(255,255,255,0.7); }
   .toggle-btn.active-buy { background: #00c853; color: #fff; }
   .toggle-btn.active-sell { background: #f44336; color: #fff; }
-  .toggle-btn.active-real { background: #2196f3; color: #fff; }
-  .toggle-btn.active-cfd { background: rgba(255,255,255,0.2); color: #fff; }
 
-  .settlement-row {
-    background: #0b1828;
-    padding: 0 24px 16px;
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-shrink: 0;
-  }
+  .product-indicator { background: #0b1828; padding: 0 24px 16px; display: flex; gap: 8px; justify-content: center; align-items: center; flex-shrink: 0; }
+  .product-badge-pill { background: rgba(255,255,255,0.12); padding: 6px 16px; border-radius: 20px; display: flex; align-items: center; gap: 8px; }
+  .product-badge-pill .badge-type { font-size: 12px; font-weight: 700; }
+  .product-badge-pill .badge-type.cfd { color: #ce93d8; }
+  .product-badge-pill .badge-type.real { color: #64b5f6; }
+  .product-badge-pill .badge-note { color: rgba(255,255,255,0.45); font-size: 11px; }
+  .margin-toggle-wrap { background: #f5f7fa; border-radius: 12px; padding: 14px 18px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .margin-toggle-wrap .mt-label { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+  .margin-toggle-wrap .mt-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .toggle-switch { width: 44px; height: 24px; border-radius: 12px; position: relative; cursor: pointer; transition: background 0.2s; }
+  .toggle-switch.off { background: #e5e7eb; }
+  .toggle-switch.on { background: #00c853; }
+  .toggle-switch .knob { width: 20px; height: 20px; border-radius: 50%; background: #fff; position: absolute; top: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: left 0.2s; }
+  .toggle-switch.off .knob { left: 2px; }
+  .toggle-switch.on .knob { left: 22px; }
 
   .body-content {
     padding: 20px 24px;
@@ -751,12 +756,7 @@
           </div>
           <div class="close-btn" data-action="close-trade">&times;</div>
         </div>
-        <div class="settlement-row">
-          <div class="toggle-group" style="background:rgba(255,255,255,0.08);">
-            <div class="toggle-btn active-real" id="btnReal" data-action="set-settlement-real">Real</div>
-            <div class="toggle-btn" id="btnCfd" data-action="set-settlement-cfd">CFD</div>
-          </div>
-        </div>
+        <div class="product-indicator" id="productIndicator"></div>
         <div class="body-content" id="tradeBody"></div>
       </div>
 
@@ -777,13 +777,13 @@
           <div class="margin-overview">
             <div class="section-title">Margin Account Overview</div>
             <div class="equity-value">$100,000.00</div>
-            <div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">$15,150.00</span></div>
-            <div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">$15,000.00</span></div>
-            <div class="metric-row"><span class="label">Remaining Margin</span><span class="value" style="color:#00c853;">$84,850.00</span></div>
+            <div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">$2,500.00</span></div>
+            <div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">$10,000.00</span></div>
+            <div class="metric-row"><span class="label">Remaining Margin</span><span class="value" style="color:#00c853;">$72,500.00</span></div>
             <div class="health-bar-container">
               <div class="health-bar-label">
                 <span class="label">Margin Health</span>
-                <span class="value">667%</span>
+                <span class="value">1000%</span>
               </div>
               <div class="health-bar"><div class="fill green" style="width:100%"></div></div>
               <div class="health-badge safe">Safe</div>
@@ -796,9 +796,9 @@
             <div class="position-left">
               <div class="instrument-icon aapl" style="width:36px;height:36px;font-size:12px;">A</div>
               <div class="position-details">
-                <div class="ticker-row"><span class="ticker">AAPL</span><span class="settlement-badge">Real x4</span></div>
+                <div class="ticker-row"><span class="ticker">AAPL</span><span class="settlement-badge">Stock (Real) x1</span></div>
                 <div class="name">Apple Inc</div>
-                <div class="margin-info">Notional: $25,000 &middot; IMR: $6,250 &middot; MMR: $5,000</div>
+                <div class="margin-info">Notional: $25,000 &middot; Cash: $25,000 (Collateral)</div>
               </div>
             </div>
             <div class="position-right">
@@ -822,13 +822,13 @@
             </div>
           </div>
 
-          <div class="position-card" data-action="open-trade" data-instrument="MSFT" data-settlement="real">
+          <div class="position-card" data-action="open-trade" data-instrument="MSFT" data-settlement="cfd">
             <div class="position-left">
               <div class="instrument-icon msft" style="width:36px;height:36px;font-size:12px;">M</div>
               <div class="position-details">
-                <div class="ticker-row"><span class="ticker">MSFT</span><span class="settlement-badge">Real x4</span></div>
+                <div class="ticker-row"><span class="ticker">MSFT</span><span class="settlement-badge cfd">CFD x20</span></div>
                 <div class="name">Microsoft Corp</div>
-                <div class="margin-info">Notional: $32,000 &middot; IMR: $8,000 &middot; MMR: $6,400</div>
+                <div class="margin-info">Notional: $32,000 &middot; IMR: $1,600 &middot; MMR: $6,400</div>
               </div>
             </div>
             <div class="position-right">
@@ -925,7 +925,7 @@
   </div>
 
   <div class="interaction-hint">
-    <strong>Tap anything!</strong> Toggle Buy/Short, Real/CFD, Shares/Amount, SL/TP. Click Buy to execute. Click positions to trade. Use the nav bar to switch screens.
+    <strong>Tap anything!</strong> Toggle Buy/Short, Shares/Amount, SL/TP, "Buy without margin". Click Buy to execute. Click positions to trade. Use the nav bar to switch screens.
   </div>
 </div>
 
@@ -939,28 +939,33 @@
   'use strict';
 
   var instruments = {
-    AAPL: { ticker: 'AAPL', name: 'Apple Inc', price: 175.50, iconClass: 'aapl', iconLetter: 'A' },
-    TSLA: { ticker: 'TSLA', name: 'Tesla Inc', price: 176.00, iconClass: 'tsla', iconLetter: 'T' },
-    MSFT: { ticker: 'MSFT', name: 'Microsoft Corp', price: 420.50, iconClass: 'msft', iconLetter: 'M' }
+    AAPL: { ticker: 'AAPL', name: 'Apple Inc', price: 175.50, iconClass: 'aapl', iconLetter: 'A', supportsNoMargin: true },
+    TSLA: { ticker: 'TSLA', name: 'Tesla Inc', price: 176.00, iconClass: 'tsla', iconLetter: 'T', supportsNoMargin: true },
+    MSFT: { ticker: 'MSFT', name: 'Microsoft Corp', price: 420.50, iconClass: 'msft', iconLetter: 'M', supportsNoMargin: true }
   };
 
   var state = {
     view: 'trade',
     prevView: null,
     side: 'buy',
-    settlement: 'real',
+    buyWithoutMargin: false,
     inputMode: 'shares',
     instrument: 'AAPL',
     sharesValue: 100,
     amountValue: 5000,
     slEnabled: false,
     tpEnabled: false,
-    availableMargin: 84850,
+    availableMargin: 72500,
     notifLevel: 'yellow'
   };
 
+  function getSettlement() {
+    var inst = instruments[state.instrument];
+    return (state.buyWithoutMargin && inst.supportsNoMargin) ? 'real' : 'cfd';
+  }
+
   function getLeverage() {
-    return state.settlement === 'cfd' ? 20 : 4;
+    return getSettlement() === 'real' ? 1 : 20;
   }
 
   function getInputValue() {
@@ -972,13 +977,21 @@
     if (state.inputMode === 'shares') {
       return state.sharesValue * inst.price;
     }
+    if (getSettlement() === 'real') return state.amountValue;
     return state.amountValue * getLeverage();
   }
 
   function getIMR() {
+    if (getSettlement() === 'real') return 0;
     if (state.inputMode === 'shares') {
       return (state.sharesValue * instruments[state.instrument].price) / getLeverage();
     }
+    return state.amountValue;
+  }
+
+  function getCashRequired() {
+    if (getSettlement() !== 'real') return 0;
+    if (state.inputMode === 'shares') return state.sharesValue * instruments[state.instrument].price;
     return state.amountValue;
   }
 
@@ -1036,8 +1049,8 @@
     }
     detailRows += '<div class="divider"></div>';
     detailRows += '<div class="detail-row"><span class="label">Initial Margin Required</span><span class="value">' + fmt(imr) + '</span></div>';
-    detailRows += '<div class="detail-row"><span class="label">Available Margin</span><span class="value ' + (sufficient ? 'green' : '') + '">' + fmt(state.availableMargin) + '</span></div>';
-    detailRows += '<div class="detail-row"><span class="label">Projected Remaining</span><span class="value ' + (remaining >= 0 ? 'green' : 'red') + '">' + fmt(remaining) + '</span></div>';
+    detailRows += '<div class="detail-row"><span class="label">Available Margin</span><span class="value ' + (sufficient ? 'green' : '') + ''>' + fmt(state.availableMargin) + '</span></div>';
+    detailRows += '<div class="detail-row"><span class="label">Projected Remaining</span><span class="value ' + (remaining >= 0 ? 'green' : 'red') + ''>' + fmt(remaining) + '</span></div>';
 
     var errorHtml = '';
     if (!sufficient) {
@@ -1079,14 +1092,14 @@
     html += '<div class="sltp-toggle ' + (state.slEnabled ? 'on' : 'off') + '" data-action="toggle-sl"><div class="knob"></div></div>';
     html += '<span class="sltp-label">Stop Loss</span></div>';
     html += '<div style="display:flex;align-items:center;" data-action="toggle-sl" style="cursor:pointer">';
-    html += '<span class="sltp-value ' + (state.slEnabled ? 'set' : '') + '">' + (state.slEnabled ? getSLValue() : 'No SL') + '</span>';
+    html += '<span class="sltp-value ' + (state.slEnabled ? 'set' : '') + ''>' + (state.slEnabled ? getSLValue() : 'No SL') + '</span>';
     html += '<span class="sltp-chevron">&#8250;</span></div></div>';
 
     html += '<div class="sltp-row"><div class="sltp-left">';
     html += '<div class="sltp-toggle ' + (state.tpEnabled ? 'on' : 'off') + '" data-action="toggle-tp"><div class="knob"></div></div>';
     html += '<span class="sltp-label">Take Profit</span></div>';
     html += '<div style="display:flex;align-items:center;" data-action="toggle-tp" style="cursor:pointer">';
-    html += '<span class="sltp-value ' + (state.tpEnabled ? 'set' : '') + '">' + (state.tpEnabled ? getTPValue() : 'No TP') + '</span>';
+    html += '<span class="sltp-value ' + (state.tpEnabled ? 'set' : '') + ''>' + (state.tpEnabled ? getTPValue() : 'No TP') + '</span>';
     html += '<span class="sltp-chevron">&#8250;</span></div></div>';
     html += '</div>';
 
@@ -1106,13 +1119,13 @@
     btnShort.className = 'toggle-btn' + (!isBuy ? ' active-sell' : '');
     btnShort.style.color = !isBuy ? '' : 'rgba(255,255,255,0.5)';
 
-    var isCfd = state.settlement === 'cfd';
-    var btnReal = document.getElementById('btnReal');
-    var btnCfd = document.getElementById('btnCfd');
-    btnReal.className = 'toggle-btn' + (!isCfd ? ' active-real' : '');
-    btnReal.style.color = !isCfd ? '' : 'rgba(255,255,255,0.4)';
-    btnCfd.className = 'toggle-btn' + (isCfd ? ' active-cfd' : '');
-    btnCfd.style.cssText = isCfd ? 'background:rgba(255,255,255,0.2);color:#fff;' : 'color:rgba(255,255,255,0.4);';
+    var isReal = getSettlement() === 'real';
+    var pi = document.getElementById('productIndicator');
+    if (isReal) {
+      pi.innerHTML = '<div class="product-badge-pill"><span class="badge-type real">Stock (Real)</span><span class="badge-note">No margin · x1 · Collateral</span></div>';
+    } else {
+      pi.innerHTML = '<div class="product-badge-pill"><span class="badge-type cfd">CFD</span><span class="badge-note">Auto-selected · Max leverage</span></div>';
+    }
   }
 
   function renderNotifications() {
@@ -1151,7 +1164,7 @@
     var bc = document.getElementById('breadcrumb');
     if (state.view === 'trade') {
       var inst = instruments[state.instrument];
-      bc.innerHTML = '<span>' + labels[state.view] + '</span> &mdash; ' + inst.ticker + ' (' + (state.settlement === 'cfd' ? 'CFD' : 'Real') + ', ' + (state.side === 'buy' ? 'Buy' : 'Short') + ')';
+      bc.innerHTML = '<span>' + labels[state.view] + '</span> &mdash; ' + inst.ticker + ' (' + (getSettlement() === 'cfd' ? 'CFD' : 'Real') + ', ' + (state.side === 'buy' ? 'Buy' : 'Short') + ')';
     } else {
       bc.innerHTML = '<span>' + (labels[state.view] || '') + '</span>';
     }
@@ -1193,7 +1206,7 @@
     var inst = instruments[state.instrument];
     var overlay = document.getElementById('successOverlay');
     document.getElementById('successDetail').textContent =
-      (state.side === 'buy' ? 'Bought' : 'Shorted') + ' ' + inst.ticker + ' (' + (state.settlement === 'cfd' ? 'CFD' : 'Real') + ')';
+      (state.side === 'buy' ? 'Bought' : 'Shorted') + ' ' + inst.ticker + ' (' + (getSettlement() === 'cfd' ? 'CFD x20' : 'Stock Real x1') + ')';
     overlay.classList.add('show');
     setTimeout(function() {
       overlay.classList.remove('show');
@@ -1219,10 +1232,8 @@
         state.side = 'buy'; render(); break;
       case 'set-side-short':
         state.side = 'short'; render(); break;
-      case 'set-settlement-real':
-        state.settlement = 'real'; render(); break;
-      case 'set-settlement-cfd':
-        state.settlement = 'cfd'; render(); break;
+      case 'toggle-no-margin':
+        state.buyWithoutMargin = !state.buyWithoutMargin; render(); break;
       case 'set-input-shares':
         state.inputMode = 'shares'; render(); break;
       case 'set-input-amount':
@@ -1258,10 +1269,10 @@
       case 'set-notif-orange':
         state.notifLevel = 'orange'; renderNotifications(); break;
       case 'open-trade':
-        var inst = target.closest('[data-instrument]').getAttribute('data-instrument');
+        var instKey = target.closest('[data-instrument]').getAttribute('data-instrument');
         var sett = target.closest('[data-settlement]').getAttribute('data-settlement');
-        state.instrument = inst;
-        state.settlement = sett;
+        state.instrument = instKey;
+        state.buyWithoutMargin = (sett === 'real');
         state.side = 'buy';
         state.inputMode = 'shares';
         state.sharesValue = 100;
