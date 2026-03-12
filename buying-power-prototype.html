@@ -1,1 +1,1302 @@
-<!-- File content too large - pushing via separate calls -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buying Power Flow — Interactive Prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #e8ecf1;
+    color: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+  }
+
+  /* Page header */
+  .page-header {
+    text-align: center;
+    margin-bottom: 20px;
+    max-width: 700px;
+    width: 100%;
+  }
+  .page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0b1828;
+    margin-bottom: 6px;
+  }
+  .page-header .subtitle {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 16px;
+  }
+
+  /* Scenario tabs */
+  .scenario-tabs {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .sc-tab {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid #d1d5db;
+    color: #6b7280;
+    background: #fff;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .sc-tab.active {
+    background: #0b1828;
+    color: #fff;
+    border-color: #0b1828;
+  }
+  .sc-tab:hover:not(.active) { border-color: #9ca3af; }
+
+  /* Stepper */
+  .stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 14px;
+  }
+  .step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid #d1d5db;
+    color: #9ca3af;
+    background: #fff;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 1;
+  }
+  .step-dot.done { background: #00c853; border-color: #00c853; color: #fff; }
+  .step-dot.current { background: #0b1828; border-color: #0b1828; color: #fff; }
+  .step-dot:hover:not(.current) { transform: scale(1.1); }
+  .step-line { width: 28px; height: 2px; background: #d1d5db; flex-shrink: 0; }
+  .step-line.done { background: #00c853; }
+  .step-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 6px;
+  }
+  .step-lbl {
+    width: 32px;
+    text-align: center;
+    font-size: 9px;
+    color: #9ca3af;
+    font-weight: 500;
+  }
+  .step-lbl-spacer { width: 28px; flex-shrink: 0; }
+
+  /* Phone frame — matches eToro mockups */
+  .phone {
+    width: 390px;
+    min-height: 780px;
+    max-height: 844px;
+    background: #fff;
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+    position: relative;
+    user-select: none;
+  }
+  .phone-inner {
+    width: 100%;
+    height: 844px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Status bar — matches eToro mockups */
+  .status-bar {
+    background: #0b1828;
+    height: 54px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 28px 8px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .status-bar .time { font-size: 16px; }
+  .status-bar .icons { display: flex; gap: 6px; font-size: 12px; }
+  .status-bar .icons span { opacity: 0.9; }
+
+  /* Dark header — matches eToro mockups */
+  .header {
+    background: #0b1828;
+    padding: 14px 24px 18px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .header .title { font-size: 17px; font-weight: 700; }
+  .header .desc { font-size: 12px; opacity: 0.55; margin-top: 3px; }
+
+  /* Buying Power hero — eToro dark theme with gradient */
+  .bp-hero {
+    background: linear-gradient(135deg, #0b1828 0%, #1a2d4a 100%);
+    padding: 28px 24px 22px;
+    color: #fff;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .bp-hero .lbl {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: 0.5;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .bp-hero .big {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .bp-hero .big.green { color: #00e676; }
+  .bp-hero .big.yellow { color: #ffab00; }
+  .bp-hero .big.red { color: #ff5252; }
+  .bp-hero .delta {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 4px;
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+  .bp-hero .delta.up { background: rgba(0,230,118,0.15); color: #00e676; }
+  .bp-hero .delta.down { background: rgba(255,82,82,0.15); color: #ff5252; }
+
+  /* Content area — matches portfolio-bg */
+  .portfolio-bg {
+    background: #f5f7fa;
+    padding: 0 0 16px;
+  }
+
+  /* Margin overview card — matches eToro mockups */
+  .margin-overview {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    margin: 16px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .margin-overview .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6b7280;
+    margin-bottom: 16px;
+  }
+  .margin-overview .metric-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 14px;
+  }
+  .margin-overview .metric-row .label { color: #6b7280; }
+  .margin-overview .metric-row .value { font-weight: 600; }
+  .metric-row .value.green { color: #00c853; }
+  .metric-row .value.red { color: #f44336; }
+  .metric-row .value.yellow { color: #ff9800; }
+  .metric-delta {
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+  .metric-delta.up { color: #00c853; }
+  .metric-delta.dn { color: #f44336; }
+
+  /* Health bar — matches eToro mockups */
+  .health-bar-container {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+  }
+  .health-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .health-bar-label .label { color: #6b7280; font-weight: 500; }
+  .health-bar-label .value { font-weight: 700; }
+  .health-bar {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .health-bar .fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+  .health-bar .fill.green { background: #00c853; }
+  .health-bar .fill.yellow { background: #ff9800; }
+  .health-bar .fill.red { background: #f44336; }
+  .health-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .health-badge.safe { background: #e8f5e9; color: #2e7d32; }
+  .health-badge.warning { background: #fff3e0; color: #e65100; }
+  .health-badge.critical { background: #fbe9e7; color: #bf360c; }
+  .health-badge.liquidation { background: #ffebee; color: #c62828; }
+
+  /* Position cards — matches eToro mockups */
+  .positions-label {
+    padding: 12px 24px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .position-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 8px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .position-card.new-highlight {
+    animation: highlightNew 0.8s ease-out;
+  }
+  @keyframes highlightNew {
+    0% { background: #e8f5e9; transform: scale(1.01); }
+    100% { background: #fff; transform: scale(1); }
+  }
+  .position-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .instrument-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .instrument-icon.oil { background: #ff8f00; }
+  .instrument-icon.ndx { background: #1565c0; }
+  .instrument-icon.tsla { background: #c62828; }
+  .instrument-icon.lcid { background: #2e7d32; }
+  .instrument-icon.spx { background: #6a1b9a; }
+  .instrument-icon.gold { background: #f9a825; }
+  .instrument-icon.aapl { background: #333; }
+  .position-details .ticker-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .position-details .ticker { font-weight: 700; font-size: 15px; }
+  .settlement-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+  .settlement-badge.cfd { background: #f3e5f5; color: #7b1fa2; }
+  .collateral-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    margin-left: 4px;
+  }
+  .position-details .name { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .position-details .margin-info { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+  .position-right { text-align: right; }
+  .position-right .pnl { font-weight: 700; font-size: 15px; }
+  .position-right .pnl.positive { color: #00c853; }
+  .position-right .pnl.negative { color: #f44336; }
+  .position-right .pct { font-size: 12px; color: #6b7280; }
+
+  /* Trade ticket — matches eToro mockups */
+  .trade-section {
+    padding: 16px 24px;
+    background: #fff;
+    border-top: 4px solid #00c853;
+  }
+  .trade-section.short-border { border-top-color: #f44336; }
+  .trade-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #9ca3af;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .instrument-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 14px;
+  }
+  .instrument-left { display: flex; align-items: center; gap: 12px; }
+  .instrument-info .ticker { font-weight: 700; font-size: 17px; }
+  .instrument-info .name { font-size: 12px; color: #6b7280; }
+  .instrument-price { font-weight: 700; font-size: 17px; }
+
+  .input-box {
+    background: #f5f7fa;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+  .input-box .label { color: #6b7280; font-size: 15px; }
+  .input-box .value { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+
+  .sub-label {
+    text-align: right;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 16px;
+    padding-right: 4px;
+  }
+
+  .leverage-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .leverage-badge .lock { font-size: 11px; }
+  .leverage-badge.real-badge {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  /* Margin toggle (Buy without margin) — BRD 2.3 */
+  .margin-toggle-wrap {
+    background: #f5f7fa;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .margin-toggle-wrap .mt-label { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+  .margin-toggle-wrap .mt-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-switch.off { background: #e5e7eb; }
+  .toggle-switch.on { background: #00c853; }
+  .toggle-switch .knob {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    top: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: left 0.2s;
+  }
+  .toggle-switch.off .knob { left: 2px; }
+  .toggle-switch.on .knob { left: 22px; }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .label { color: #6b7280; }
+  .detail-row .value { font-weight: 600; text-align: right; }
+  .detail-row .value.green { color: #00c853; }
+  .detail-row .value.red { color: #f44336; }
+
+  .divider { height: 1px; background: #e5e7eb; margin: 4px 0; }
+
+  .disclosure {
+    text-align: center;
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 14px;
+    line-height: 1.4;
+    padding: 0 8px;
+  }
+
+  /* Collateral callout */
+  .collateral-callout {
+    background: #e8f5e9;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .collateral-callout .cc-icon { font-size: 20px; }
+  .collateral-callout .cc-text { font-size: 12px; color: #2e7d32; font-weight: 500; line-height: 1.4; }
+
+  /* Deposit screen */
+  .deposit-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    flex: 1;
+    background: #fff;
+  }
+  .dep-icon { font-size: 56px; margin-bottom: 16px; }
+  .dep-amt { font-size: 42px; font-weight: 800; color: #00c853; margin-bottom: 8px; }
+  .dep-lbl { font-size: 14px; color: #6b7280; margin-bottom: 24px; }
+
+  /* Warning notification cards — matches eToro mockups */
+  .notif-card {
+    margin: 12px 24px;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .notif-card.yellow-card { background: #fff8e1; border-left: 4px solid #ff9800; }
+  .notif-card.orange-card { background: #fff3e0; border-left: 4px solid #ff5722; }
+  .notif-card .notif-title { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+  .notif-card.yellow-card .notif-title { color: #e65100; }
+  .notif-card.orange-card .notif-title { color: #bf360c; }
+  .notif-card .notif-text {
+    font-size: 14px;
+    color: #4a4a4a;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
+  /* Market simulation */
+  .market-sim-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    margin: 12px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .market-sim-card .ms-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0b1828;
+    margin-bottom: 10px;
+  }
+  .market-sim-card .ms-anim {
+    text-align: center;
+    font-size: 13px;
+    color: #6b7280;
+    padding: 8px 0;
+  }
+  .market-sim-card .ms-anim .pulse {
+    display: inline-block;
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+  .ms-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    padding: 6px 0;
+  }
+  .ms-row .ms-label { color: #6b7280; }
+  .ms-row .ms-val { font-weight: 700; }
+  .ms-row .ms-val.positive { color: #00c853; }
+  .ms-row .ms-val.negative { color: #f44336; }
+
+  /* Netting callout */
+  .netting-box {
+    background: #ede7f6;
+    border-radius: 16px;
+    padding: 20px;
+    margin: 12px 24px;
+  }
+  .netting-box .nb-title { font-size: 14px; font-weight: 700; color: #4a148c; margin-bottom: 8px; }
+  .netting-box .nb-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+  .netting-box .nb-row .nl { color: #6b7280; }
+  .netting-box .nb-row .nv { font-weight: 600; color: #4a148c; }
+
+  /* Summary badge */
+  .summary-badge {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin: 12px 24px;
+  }
+  .summary-badge .sb-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #2e7d32;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .summary-badge .sb-val { font-size: 28px; font-weight: 800; color: #1b5e20; }
+  .summary-badge .sb-sub { font-size: 12px; color: #4caf50; margin-top: 4px; }
+
+  /* Navigation buttons */
+  .nav-btns {
+    display: flex;
+    gap: 10px;
+    padding: 16px 24px;
+    background: #fff;
+    border-top: 1px solid #f0f0f0;
+    flex-shrink: 0;
+  }
+  .nav-btns .nb {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 28px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s;
+    letter-spacing: 0.3px;
+  }
+  .nav-btns .nb:active:not(:disabled) { transform: scale(0.97); }
+  .nav-btns .nb-back { background: #f0f0f0; color: #1a1a2e; }
+  .nav-btns .nb-next { background: #0b1828; color: #fff; }
+  .nav-btns .nb-exec { background: #00c853; color: #fff; }
+  .nav-btns .nb:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Success overlay — matches eToro mockups */
+  .success-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,200,83,0.92);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    color: #fff;
+  }
+  .success-overlay.show {
+    display: flex;
+    animation: fadeIn 0.2s ease-out;
+  }
+  .success-checkmark {
+    width: 80px; height: 80px;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin-bottom: 16px;
+    animation: scaleIn 0.3s ease-out;
+  }
+  .success-overlay .lbl { font-size: 20px; font-weight: 700; }
+  .success-overlay .sublbl { font-size: 14px; opacity: 0.85; margin-top: 4px; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scaleIn { from { transform: scale(0.5); } to { transform: scale(1); } }
+
+  .spacer { height: 16px; flex-shrink: 0; }
+
+  /* Interaction hint */
+  .interaction-hint {
+    margin-top: 16px;
+    padding: 10px 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    font-size: 12px;
+    color: #6b7280;
+    text-align: center;
+    max-width: 390px;
+  }
+  .interaction-hint strong { color: #1a1a2e; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Buying Power Flow — Interactive Prototype</h1>
+  <p class="subtitle">Margin Account with auto-applied leverage per BRD. Click through each scenario step-by-step.</p>
+</div>
+
+<div class="scenario-tabs" id="scenarioTabs"></div>
+<div id="stepperWrap"></div>
+
+<div class="phone" style="position:relative">
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-checkmark">&#10003;</div>
+    <div class="lbl" id="successLbl">Order Placed</div>
+    <div class="sublbl" id="successSub"></div>
+  </div>
+  <div class="phone-inner" id="phoneInner"></div>
+</div>
+
+<div class="interaction-hint">
+  <strong>Click scenario tabs</strong> to switch flows. Use <strong>Back / Next / Execute</strong> to step through. Toggle "Buy without margin" on supported assets.
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // BRD-aligned asset definitions
+  // Leverage per BRD: Stocks Real x4, Stocks CFD x20, Indices/Commodities x20
+  // MMR Rate per BRD: 0.20 for demonstration (BRD table shows 0.50 for stocks,
+  // BRD example uses 0.30 — using 0.20 for cleaner demo numbers)
+  var MMR_RATE = 0.20;
+
+  var ASSETS = {
+    OIL:  { tk: 'OIL',     nm: 'Crude Oil WTI',   price: 78.50,  icon: 'oil',  letter: 'O', lev: 20, supportsNoMargin: false },
+    NDX:  { tk: 'NDX',     nm: 'Nasdaq 100',       price: 18200,  icon: 'ndx',  letter: 'N', lev: 20, supportsNoMargin: false },
+    TSLA: { tk: 'TSLA',    nm: 'Tesla Inc',        price: 175.50, icon: 'tsla', letter: 'T', lev: 20, supportsNoMargin: true },
+    LCID: { tk: 'LCID',    nm: 'Lucid Group Inc',  price: 3.20,   icon: 'lcid', letter: 'L', lev: 20, supportsNoMargin: true },
+    SPX:  { tk: 'S&P 500', nm: 'S&P 500 Index',    price: 5200,   icon: 'spx',  letter: 'S', lev: 20, supportsNoMargin: false },
+    GOLD: { tk: 'GOLD',    nm: 'Gold Spot',         price: 2150,   icon: 'gold', letter: 'G', lev: 20, supportsNoMargin: false },
+    AAPL: { tk: 'AAPL',    nm: 'Apple Inc',         price: 178.00, icon: 'aapl', letter: 'A', lev: 20, supportsNoMargin: true }
+  };
+
+  var SCENARIOS = [
+    { id: 'baseline', name: '1: Baseline Flow', steps: [
+      { type: 'deposit', amount: 100000 },
+      { type: 'trade', asset: 'OIL', notional: 200000, side: 'buy' },
+      { type: 'trade', asset: 'NDX', notional: 500000, side: 'buy' },
+      { type: 'trade', asset: 'TSLA', notional: 50000, side: 'buy' },
+      { type: 'trade', asset: 'LCID', notional: 50000, side: 'buy', noMarginDefault: true }
+    ]},
+    { id: 'profit', name: '2: Profit Expansion', steps: [
+      { type: 'deposit', amount: 50000 },
+      { type: 'trade', asset: 'SPX', notional: 500000, side: 'buy' },
+      { type: 'market', direction: 'up', pct: 5, label: 'Market rallies +5%' },
+      { type: 'trade', asset: 'GOLD', notional: 200000, side: 'buy' },
+      { type: 'summary', label: 'Unrealized P&L expanded Remaining Margin' }
+    ]},
+    { id: 'pressure', name: '3: Margin Pressure', steps: [
+      { type: 'deposit', amount: 75000 },
+      { type: 'trade', asset: 'NDX', notional: 500000, side: 'buy' },
+      { type: 'trade', asset: 'OIL', notional: 200000, side: 'buy' },
+      { type: 'trade', asset: 'AAPL', notional: 20000, side: 'buy', noMarginDefault: true },
+      { type: 'market', direction: 'down', pct: 8, label: 'Market drops -8%' },
+      { type: 'warning', label: 'Margin Warning — Action Required' }
+    ]},
+    { id: 'hedged', name: '4: Hedged Exposure', steps: [
+      { type: 'deposit', amount: 100000 },
+      { type: 'trade', asset: 'SPX', notional: 500000, side: 'buy' },
+      { type: 'trade', asset: 'SPX', notional: 500000, side: 'short' },
+      { type: 'netting', label: 'Risk netting reduces margin' },
+      { type: 'summary', label: 'Netting freed margin, increasing Remaining Margin' }
+    ]}
+  ];
+
+  var state = {
+    scenario: 0,
+    step: 0,
+    maxStep: 0,
+    accounts: []
+  };
+
+  // BRD formulas:
+  // IMR = Notional / Applied Leverage
+  // MMR = Notional * MMR_RATE
+  // Equity = Cash Balance + Unrealized P&L
+  // Remaining Margin = Equity - Total IMR
+  // Margin Health Ratio = Equity / Total MMR (infinity if no MMR)
+
+  function initAccount(depositAmt) {
+    return {
+      deposit: depositAmt,
+      equity: depositAmt,
+      totalIMR: 0,
+      totalMMR: 0,
+      positions: [],
+      unrealizedPnl: 0,
+      marketApplied: false,
+      nettingApplied: false
+    };
+  }
+
+  function cloneAcct(a) {
+    return {
+      deposit: a.deposit, equity: a.equity, totalIMR: a.totalIMR, totalMMR: a.totalMMR,
+      positions: a.positions.map(function(p) { return Object.assign({}, p); }),
+      unrealizedPnl: a.unrealizedPnl, marketApplied: a.marketApplied, nettingApplied: a.nettingApplied
+    };
+  }
+
+  function buildSnapshots(scIdx) {
+    var sc = SCENARIOS[scIdx];
+    var snaps = [];
+    var acct = null;
+
+    for (var i = 0; i < sc.steps.length; i++) {
+      var s = sc.steps[i];
+
+      if (s.type === 'deposit') {
+        acct = initAccount(s.amount);
+        snaps.push(cloneAcct(acct));
+
+      } else if (s.type === 'trade') {
+        acct = cloneAcct(snaps[snaps.length - 1]);
+        var asset = ASSETS[s.asset];
+        var isNoMargin = !!s.noMarginDefault;
+        var lev = isNoMargin ? 1 : asset.lev;
+        var imr = isNoMargin ? 0 : s.notional / lev;
+        var mmr = isNoMargin ? 0 : s.notional * MMR_RATE;
+        var cashUsed = isNoMargin ? s.notional : 0;
+
+        acct.totalIMR += imr;
+        acct.totalMMR += mmr;
+
+        acct.positions.push({
+          asset: s.asset, side: s.side, notional: s.notional, leverage: lev,
+          imr: imr, mmr: mmr, type: isNoMargin ? 'real' : 'cfd',
+          pnl: 0, isNew: true, cashUsed: cashUsed
+        });
+
+        for (var j = 0; j < acct.positions.length - 1; j++) acct.positions[j].isNew = false;
+        snaps.push(cloneAcct(acct));
+
+      } else if (s.type === 'market') {
+        acct = cloneAcct(snaps[snaps.length - 1]);
+        var pctMove = s.pct / 100 * (s.direction === 'up' ? 1 : -1);
+        var totalPnl = 0;
+        for (var k = 0; k < acct.positions.length; k++) {
+          var p = acct.positions[k];
+          var dir = p.side === 'buy' ? 1 : -1;
+          p.pnl = p.notional * pctMove * dir;
+          totalPnl += p.pnl;
+        }
+        acct.unrealizedPnl = totalPnl;
+        acct.equity = acct.deposit + totalPnl;
+        acct.marketApplied = true;
+        snaps.push(cloneAcct(acct));
+
+      } else if (s.type === 'netting') {
+        acct = cloneAcct(snaps[snaps.length - 1]);
+        acct.totalIMR = acct.totalIMR * 0.5;
+        acct.totalMMR = acct.totalMMR * 0.5;
+        acct.nettingApplied = true;
+        snaps.push(cloneAcct(acct));
+
+      } else if (s.type === 'warning' || s.type === 'summary') {
+        acct = cloneAcct(snaps[snaps.length - 1]);
+        snaps.push(cloneAcct(acct));
+      }
+    }
+    return snaps;
+  }
+
+  // BRD: Remaining Margin = Equity - Total IMR
+  function remainingMargin(a) {
+    return a.equity - a.totalIMR - realCashUsed(a);
+  }
+
+  function realCashUsed(a) {
+    var t = 0;
+    a.positions.forEach(function(p) { if (p.type === 'real') t += (p.cashUsed || 0); });
+    return t;
+  }
+
+  // BRD: Margin Health Ratio = Equity / Total MMR
+  function marginHealthRatio(a) {
+    if (a.totalMMR === 0) return Infinity;
+    return a.equity / a.totalMMR;
+  }
+
+  function healthBand(ratio) {
+    if (ratio === Infinity) return { label: 'Safe', cls: 'safe', color: 'green', pct: 100 };
+    if (ratio >= 2.0) return { label: 'Safe', cls: 'safe', color: 'green', pct: 100 };
+    if (ratio >= 1.5) return { label: 'Warning', cls: 'warning', color: 'yellow', pct: Math.min(100, ratio / 2 * 100) };
+    if (ratio >= 1.0) return { label: 'Critical', cls: 'critical', color: 'red', pct: Math.min(100, ratio / 2 * 100) };
+    return { label: 'Liquidation', cls: 'liquidation', color: 'red', pct: Math.min(100, ratio / 2 * 100) };
+  }
+
+  function fmt(n) {
+    var s = n < 0 ? '-' : '';
+    var v = Math.abs(n);
+    return s + '$' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function fmtK(n) {
+    var s = n < 0 ? '-' : '';
+    var v = Math.abs(n);
+    if (v >= 1000) return s + '$' + Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return s + '$' + v.toFixed(2);
+  }
+
+  function fmtPct(n) { return (n >= 0 ? '+' : '') + n.toFixed(1) + '%'; }
+  function fmtRatio(r) { return r === Infinity ? '∞' : (r * 100).toFixed(0) + '%'; }
+
+  // ---- RENDERING ----
+
+  function renderScenarioTabs() {
+    var h = '';
+    SCENARIOS.forEach(function(sc, i) {
+      h += '<div class="sc-tab' + (i === state.scenario ? ' active' : '') + '" data-sc="' + i + '">' + sc.name + '</div>';
+    });
+    document.getElementById('scenarioTabs').innerHTML = h;
+  }
+
+  function renderStepper() {
+    var sc = SCENARIOS[state.scenario];
+    var h1 = '<div class="stepper">';
+    var h2 = '<div class="step-label-row">';
+    var labels = [];
+    for (var i = 0; i < sc.steps.length; i++) {
+      var s = sc.steps[i];
+      if (s.type === 'deposit') labels.push('Deposit');
+      else if (s.type === 'trade') labels.push(ASSETS[s.asset].tk);
+      else if (s.type === 'market') labels.push('Market');
+      else if (s.type === 'netting') labels.push('Netting');
+      else if (s.type === 'warning') labels.push('Warning');
+      else if (s.type === 'summary') labels.push('Summary');
+    }
+    for (var j = 0; j < sc.steps.length; j++) {
+      if (j > 0) { h1 += '<div class="step-line' + (j <= state.step ? ' done' : '') + '"></div>'; h2 += '<div class="step-lbl-spacer"></div>'; }
+      var cls = j < state.step ? 'done' : (j === state.step ? 'current' : '');
+      h1 += '<div class="step-dot ' + cls + '" data-step="' + j + '">' + (j + 1) + '</div>';
+      h2 += '<div class="step-lbl">' + labels[j] + '</div>';
+    }
+    h1 += '</div>'; h2 += '</div>';
+    document.getElementById('stepperWrap').innerHTML = h2 + h1;
+  }
+
+  function getSnaps() {
+    if (!state.accounts[state.scenario]) state.accounts[state.scenario] = buildSnapshots(state.scenario);
+    return state.accounts[state.scenario];
+  }
+
+  function render() {
+    renderScenarioTabs();
+    renderStepper();
+    var sc = SCENARIOS[state.scenario];
+    var step = sc.steps[state.step];
+    var snaps = getSnaps();
+    var acct = snaps[state.step];
+    var prev = state.step > 0 ? snaps[state.step - 1] : null;
+    var el = document.getElementById('phoneInner');
+    var h = '';
+
+    if (step.type === 'deposit') {
+      h += renderDeposit(step, acct);
+    } else if (step.type === 'trade') {
+      h += renderDashboard(acct, prev);
+      h += renderTradeTicket(step, acct);
+    } else if (step.type === 'market') {
+      h += renderDashboard(acct, prev);
+      h += renderMarketSim(step, acct);
+    } else if (step.type === 'warning') {
+      h += renderDashboard(acct, prev);
+      h += renderWarning(acct);
+    } else if (step.type === 'netting') {
+      h += renderDashboard(acct, prev);
+      h += renderNetting(acct);
+    } else if (step.type === 'summary') {
+      h += renderDashboard(acct, prev);
+      h += renderSummary(acct);
+    }
+
+    h += renderNavButtons();
+    el.innerHTML = h;
+    el.scrollTop = 0;
+  }
+
+  function renderStatusBar() {
+    return '<div class="status-bar"><span class="time">9:41</span><div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div></div>';
+  }
+
+  function renderDeposit(step, acct) {
+    var h = renderStatusBar();
+    h += '<div class="header"><div class="title">Margin Account</div><div class="desc">Deposit Funds</div></div>';
+    h += '<div class="deposit-screen">';
+    h += '<div class="dep-icon">&#128176;</div>';
+    h += '<div class="dep-amt">' + fmtK(step.amount) + '</div>';
+    h += '<div class="dep-lbl">Deposited to your Margin Account</div>';
+
+    h += '<div class="margin-overview" style="width:100%;text-align:left;margin:0;">';
+    h += '<div class="section-title">Account Overview</div>';
+    h += '<div class="metric-row"><span class="label">Equity</span><span class="value">' + fmtK(acct.equity) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">' + fmtK(acct.totalIMR) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">' + fmtK(acct.totalMMR) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Remaining Margin</span><span class="value green">' + fmtK(remainingMargin(acct)) + '</span></div>';
+    h += '</div>';
+
+    h += '</div>';
+    return h;
+  }
+
+  function renderDashboard(acct, prev) {
+    var rm = remainingMargin(acct);
+    var prevRm = prev ? remainingMargin(prev) : rm;
+    var rmDelta = rm - prevRm;
+    var eqDelta = prev ? (acct.equity - prev.equity) : 0;
+    var imrDelta = prev ? (acct.totalIMR - prev.totalIMR) : 0;
+    var mmrDelta = prev ? (acct.totalMMR - prev.totalMMR) : 0;
+
+    var hr = marginHealthRatio(acct);
+    var band = healthBand(hr);
+    var bpColor = rm > 50000 ? 'green' : (rm > 20000 ? 'yellow' : 'red');
+
+    var h = renderStatusBar();
+
+    // Buying Power hero
+    h += '<div class="bp-hero">';
+    h += '<div class="lbl">Remaining Margin (Buying Power)</div>';
+    h += '<div class="big ' + bpColor + '">' + fmtK(rm) + '</div>';
+    if (rmDelta !== 0) {
+      h += '<div class="delta ' + (rmDelta > 0 ? 'up' : 'down') + '">' + (rmDelta > 0 ? '+' : '') + fmtK(rmDelta) + '</div>';
+    }
+    h += '</div>';
+
+    // Account breakdown card
+    h += '<div class="portfolio-bg">';
+    h += '<div class="margin-overview">';
+    h += '<div class="section-title">Account Breakdown (per BRD)</div>';
+
+    h += '<div class="metric-row"><span class="label">Equity</span><span class="value">' + fmtK(acct.equity);
+    if (eqDelta !== 0) h += '<span class="metric-delta ' + (eqDelta > 0 ? 'up' : 'dn') + '">' + (eqDelta > 0 ? '+' : '') + fmtK(eqDelta) + '</span>';
+    h += '</span></div>';
+
+    h += '<div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">' + fmtK(acct.totalIMR);
+    if (imrDelta !== 0) h += '<span class="metric-delta ' + (imrDelta > 0 ? 'dn' : 'up') + '">' + (imrDelta > 0 ? '+' : '') + fmtK(imrDelta) + '</span>';
+    h += '</span></div>';
+
+    h += '<div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">' + fmtK(acct.totalMMR);
+    if (mmrDelta !== 0) h += '<span class="metric-delta dn">+' + fmtK(mmrDelta) + '</span>';
+    h += '</span></div>';
+
+    var rcu = realCashUsed(acct);
+    if (rcu > 0) {
+      h += '<div class="metric-row"><span class="label">Real Stock Holdings</span><span class="value">' + fmtK(rcu) + '</span></div>';
+    }
+
+    h += '<div class="metric-row"><span class="label">Remaining Margin</span><span class="value ' + (rm > 0 ? 'green' : 'red') + '">' + fmtK(rm) + '</span></div>';
+
+    if (acct.unrealizedPnl !== 0) {
+      h += '<div class="metric-row"><span class="label">Unrealized P&L</span><span class="value ' + (acct.unrealizedPnl > 0 ? 'green' : 'red') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
+    }
+
+    // Margin Health Ratio bar (BRD formula)
+    h += '<div class="health-bar-container">';
+    h += '<div class="health-bar-label"><span class="label">Margin Health Ratio</span><span class="value">' + fmtRatio(hr) + '</span></div>';
+    h += '<div class="health-bar"><div class="fill ' + band.color + '" style="width:' + band.pct + '%"></div></div>';
+    h += '<div class="health-badge ' + band.cls + '">' + band.label + '</div>';
+    h += '</div>';
+
+    h += '</div>';
+
+    // Position cards
+    if (acct.positions.length > 0) {
+      h += '<div class="positions-label">Open Positions</div>';
+      acct.positions.forEach(function(p) {
+        var a = ASSETS[p.asset];
+        h += '<div class="position-card' + (p.isNew ? ' new-highlight' : '') + '">';
+        h += '<div class="position-left">';
+        h += '<div class="instrument-icon ' + a.icon + '">' + a.letter + '</div>';
+        h += '<div class="position-details">';
+        h += '<div class="ticker-row"><span class="ticker">' + a.tk + '</span>';
+        h += '<span class="settlement-badge ' + (p.type === 'real' ? '' : 'cfd') + '">' + (p.type === 'real' ? 'Stock (Real) x1' : 'CFD x' + p.leverage) + '</span>';
+        if (p.type === 'real') h += '<span class="collateral-badge">Collateral</span>';
+        h += '</div>';
+        h += '<div class="name">' + (p.side === 'buy' ? 'Long' : 'Short') + ' &middot; ' + a.nm + '</div>';
+        h += '<div class="margin-info">Notional: ' + fmtK(p.notional) + (p.imr > 0 ? ' &middot; IMR: ' + fmtK(p.imr) : '') + (p.mmr > 0 ? ' &middot; MMR: ' + fmtK(p.mmr) : '') + '</div>';
+        h += '</div></div>';
+        h += '<div class="position-right">';
+        if (p.pnl !== 0) {
+          h += '<div class="pnl ' + (p.pnl > 0 ? 'positive' : 'negative') + '">' + (p.pnl > 0 ? '+' : '') + fmtK(p.pnl) + '</div>';
+          h += '<div class="pct">' + fmtPct(p.pnl / p.notional * 100) + '</div>';
+        } else {
+          h += '<div class="pnl" style="color:#9ca3af">$0.00</div>';
+        }
+        h += '</div></div>';
+      });
+    }
+
+    var hasReal = acct.positions.some(function(p) { return p.type === 'real'; });
+    if (hasReal) {
+      h += '<div class="collateral-callout"><div class="cc-icon">&#9989;</div><div class="cc-text">Real stock holdings contribute as collateral to your Remaining Margin within the Margin Account.</div></div>';
+    }
+
+    h += '<div class="spacer"></div></div>';
+    return h;
+  }
+
+  function renderTradeTicket(step, acct) {
+    var asset = ASSETS[step.asset];
+    var isNoMargin = !!step.noMarginDefault;
+    var lev = isNoMargin ? 1 : asset.lev;
+    var imr = isNoMargin ? 0 : step.notional / lev;
+    var mmr = isNoMargin ? 0 : step.notional * MMR_RATE;
+    var prevSnaps = getSnaps();
+    var prevAcct = state.step > 0 ? prevSnaps[state.step - 1] : acct;
+    var prevRm = remainingMargin(prevAcct);
+    var projectedRm = isNoMargin ? (prevRm - step.notional) : (prevRm - imr);
+
+    var h = '<div class="trade-section' + (step.side === 'short' ? ' short-border' : '') + '">';
+    h += '<div class="trade-label">' + (step.side === 'buy' ? 'Buy' : 'Short') + ' Order</div>';
+
+    h += '<div class="instrument-row">';
+    h += '<div class="instrument-left"><div class="instrument-icon ' + asset.icon + '" style="width:44px;height:44px;font-size:15px;">' + asset.letter + '</div>';
+    h += '<div class="instrument-info"><div class="ticker">' + asset.tk + '</div><div class="name">' + asset.nm + '</div></div></div>';
+    h += '<div class="instrument-price">' + asset.price.toLocaleString() + '</div></div>';
+
+    h += '<div class="input-box"><span class="label">Notional Value</span><span class="value">' + fmtK(step.notional) + '</span></div>';
+    h += '<div class="sub-label">Initial Margin Required: ' + (isNoMargin ? 'None (Real purchase)' : fmtK(imr)) + '</div>';
+
+    h += '<div class="leverage-badge' + (isNoMargin ? ' real-badge' : '') + '"><span class="lock">&#128274;</span> ' + (isNoMargin ? 'No Leverage — Real Stock (x1)' : 'Leverage: x' + lev + ' (auto-applied per BRD)') + '</div>';
+
+    if (asset.supportsNoMargin) {
+      h += '<div class="margin-toggle-wrap">';
+      h += '<div><div class="mt-label">Buy without margin</div>';
+      h += '<div class="mt-sub">Purchase real stock at x1 — no overnight fees, acts as collateral</div></div>';
+      h += '<div class="toggle-switch ' + (isNoMargin ? 'on' : 'off') + '" data-action="toggle-nm"><div class="knob"></div></div>';
+      h += '</div>';
+    }
+
+    h += '<div class="detail-row"><span class="label">Order Type</span><span class="value">Market Order</span></div>';
+    h += '<div class="detail-row"><span class="label">Settlement Type</span><span class="value" style="color:' + (isNoMargin ? '#1565c0' : '#7b1fa2') + '">' + (isNoMargin ? 'Real (Fully Paid)' : 'CFD') + '</span></div>';
+    if (!isNoMargin) {
+      h += '<div class="detail-row"><span class="label">Overnight Fee</span><span class="value">-$' + (step.notional * 0.000078).toFixed(2) + '/day</span></div>';
+    }
+    h += '<div class="divider"></div>';
+    h += '<div class="detail-row"><span class="label">Initial Margin Requirement</span><span class="value">' + (isNoMargin ? '$0 (collateral)' : fmtK(imr)) + '</span></div>';
+    if (!isNoMargin) {
+      h += '<div class="detail-row"><span class="label">Maintenance Margin Req.</span><span class="value">' + fmtK(mmr) + '</span></div>';
+    }
+    if (isNoMargin) {
+      h += '<div class="detail-row"><span class="label">Cash Required</span><span class="value">' + fmtK(step.notional) + '</span></div>';
+    }
+    h += '<div class="detail-row"><span class="label">Available Margin</span><span class="value green">' + fmtK(prevRm) + '</span></div>';
+    h += '<div class="detail-row"><span class="label">Projected Remaining</span><span class="value ' + (projectedRm >= 0 ? 'green' : 'red') + '">' + fmtK(projectedRm) + '</span></div>';
+
+    h += '<div class="disclosure">All trades execute within your Margin Account. Leverage is determined by platform rules (BRD Section 2.2).</div>';
+    h += '</div>';
+    return h;
+  }
+
+  function renderMarketSim(step, acct) {
+    var h = '<div class="market-sim-card" style="margin:12px 24px;">';
+    h += '<div class="ms-title">&#128200; Market Movement</div>';
+    h += '<div class="ms-anim"><span class="pulse">' + step.label + '</span></div>';
+    h += '<div class="ms-row"><span class="ms-label">Impact on Equity</span><span class="ms-val ' + (acct.unrealizedPnl > 0 ? 'positive' : 'negative') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
+    h += '<div class="ms-row"><span class="ms-label">New Equity</span><span class="ms-val">' + fmtK(acct.equity) + '</span></div>';
+    h += '<div class="ms-row"><span class="ms-label">Remaining Margin Change</span><span class="ms-val ' + (acct.unrealizedPnl > 0 ? 'positive' : 'negative') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
+    h += '</div>';
+    return h;
+  }
+
+  function renderWarning(acct) {
+    var hr = marginHealthRatio(acct);
+    var h = '<div class="notif-card yellow-card">';
+    h += '<div class="notif-title">&#9888;&#65039; Margin Warning</div>';
+    h += '<div class="notif-text">Your Margin Health Ratio has dropped to <strong>' + fmtRatio(hr) + '</strong>. Consider reducing positions or adding funds. Liquidation triggers at 100%.</div>';
+    h += '</div>';
+    h += '<div class="notif-card orange-card">';
+    h += '<div class="notif-title">Recommended Actions</div>';
+    h += '<div class="notif-text">&bull; Deposit additional funds<br>&bull; Close or reduce losing positions<br>&bull; Set Stop Loss on open positions</div>';
+    h += '</div>';
+    return h;
+  }
+
+  function renderNetting(acct) {
+    var grossIMR = 0;
+    acct.positions.forEach(function(p) { grossIMR += p.imr; });
+    var netIMR = acct.totalIMR;
+    var saved = grossIMR - netIMR;
+
+    var h = '<div class="netting-box">';
+    h += '<div class="nb-title">&#128737; Risk Netting Applied</div>';
+    h += '<div class="nb-row"><span class="nl">Gross Initial Margin (Long + Short)</span><span class="nv">' + fmtK(grossIMR) + '</span></div>';
+    h += '<div class="nb-row"><span class="nl">Net Initial Margin (after 50% offset)</span><span class="nv">' + fmtK(netIMR) + '</span></div>';
+    h += '<div class="nb-row"><span class="nl">Margin Saved</span><span class="nv" style="color:#2e7d32">' + fmtK(saved) + '</span></div>';
+    h += '<div style="margin-top:10px;font-size:12px;color:#6b7280;line-height:1.4">Opposing positions on the same asset reduce net risk exposure, allowing the system to release margin back to your Remaining Margin.</div>';
+    h += '</div>';
+    return h;
+  }
+
+  function renderSummary(acct) {
+    var firstSnap = getSnaps()[0];
+    var startRm = remainingMargin(firstSnap);
+    var endRm = remainingMargin(acct);
+    var hr = marginHealthRatio(acct);
+
+    var h = '<div class="summary-badge">';
+    h += '<div class="sb-title">Scenario Complete</div>';
+    h += '<div class="sb-val">' + fmtK(endRm) + '</div>';
+    h += '<div class="sb-sub">Remaining Margin (Buying Power)</div>';
+    h += '</div>';
+
+    h += '<div class="margin-overview" style="margin:12px 24px;">';
+    h += '<div class="section-title">Journey Summary</div>';
+    h += '<div class="metric-row"><span class="label">Starting Deposit</span><span class="value">' + fmtK(acct.deposit) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Positions Opened</span><span class="value">' + acct.positions.length + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">' + fmtK(acct.totalIMR) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">' + fmtK(acct.totalMMR) + '</span></div>';
+    if (acct.unrealizedPnl !== 0) {
+      h += '<div class="metric-row"><span class="label">Unrealized P&L</span><span class="value ' + (acct.unrealizedPnl > 0 ? 'green' : 'red') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
+    }
+    h += '<div class="metric-row"><span class="label">Margin Health Ratio</span><span class="value">' + fmtRatio(hr) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Final Remaining Margin</span><span class="value green">' + fmtK(endRm) + '</span></div>';
+    h += '</div>';
+
+    if (state.scenario === 1) {
+      h += '<div class="collateral-callout"><div class="cc-icon">&#128161;</div><div class="cc-text"><strong>Key Insight:</strong> Unrealized profits on CFD positions increase your Equity, which expands Remaining Margin (BRD: Remaining Margin = Equity - Total IMR) — allowing additional positions without depositing more funds.</div></div>';
+    }
+    if (state.scenario === 3) {
+      h += '<div class="collateral-callout"><div class="cc-icon">&#128737;</div><div class="cc-text"><strong>Key Insight:</strong> Hedging with opposing positions on the same asset triggers risk netting, reducing effective margin requirements and freeing Remaining Margin (Buying Power).</div></div>';
+    }
+
+    return h;
+  }
+
+  function renderNavButtons() {
+    var sc = SCENARIOS[state.scenario];
+    var isFirst = state.step === 0;
+    var isLast = state.step === sc.steps.length - 1;
+    var step = sc.steps[state.step];
+
+    var h = '<div class="nav-btns">';
+    h += '<button class="nb nb-back" data-action="prev"' + (isFirst ? ' disabled' : '') + '>&#8592; Back</button>';
+
+    if (step.type === 'trade') {
+      h += '<button class="nb nb-exec" data-action="execute">Execute &#10003;</button>';
+    } else if (isLast) {
+      h += '<button class="nb nb-next" data-action="next" disabled>End</button>';
+    } else {
+      h += '<button class="nb nb-next" data-action="next">Next &#8594;</button>';
+    }
+
+    h += '</div>';
+    return h;
+  }
+
+  function showSuccess(cb) {
+    var sc = SCENARIOS[state.scenario];
+    var step = sc.steps[state.step];
+    var asset = ASSETS[step.asset];
+    var isNoMargin = !!step.noMarginDefault;
+    var ov = document.getElementById('successOverlay');
+    document.getElementById('successSub').textContent =
+      (step.side === 'buy' ? 'Bought' : 'Shorted') + ' ' + asset.tk + ' ' +
+      (isNoMargin ? '(Real Stock x1)' : '(CFD x' + asset.lev + ')') + ' — ' + fmtK(step.notional);
+    ov.classList.add('show');
+    setTimeout(function() { ov.classList.remove('show'); if (cb) cb(); }, 1200);
+  }
+
+  // Event delegation
+  document.addEventListener('click', function(e) {
+    var t = e.target.closest('[data-sc]');
+    if (t) {
+      state.scenario = parseInt(t.getAttribute('data-sc'));
+      state.step = 0;
+      state.maxStep = 0;
+      render();
+      return;
+    }
+
+    var sd = e.target.closest('[data-step]');
+    if (sd) {
+      var si = parseInt(sd.getAttribute('data-step'));
+      if (si <= state.maxStep) { state.step = si; render(); }
+      return;
+    }
+
+    var act = e.target.closest('[data-action]');
+    if (!act) return;
+    var a = act.getAttribute('data-action');
+
+    if (a === 'next' || a === 'execute') {
+      var sc = SCENARIOS[state.scenario];
+      if (a === 'execute') {
+        showSuccess(function() {
+          if (state.step < sc.steps.length - 1) {
+            state.step++;
+            if (state.step > state.maxStep) state.maxStep = state.step;
+            render();
+          }
+        });
+      } else {
+        if (state.step < sc.steps.length - 1) {
+          state.step++;
+          if (state.step > state.maxStep) state.maxStep = state.step;
+          render();
+        }
+      }
+    } else if (a === 'prev') {
+      if (state.step > 0) { state.step--; render(); }
+    } else if (a === 'toggle-nm') {
+      var sc2 = SCENARIOS[state.scenario];
+      var step2 = sc2.steps[state.step];
+      step2.noMarginDefault = !step2.noMarginDefault;
+      state.accounts[state.scenario] = null;
+      render();
+    }
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
