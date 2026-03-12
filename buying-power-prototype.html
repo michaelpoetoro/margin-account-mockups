@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buying Power Flow — Interactive Prototype</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#e8ecf1;color:#1a1a2e;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px}
+.page-hdr{text-align:center;margin-bottom:16px;max-width:700px;width:100%}
+.page-hdr h1{font-size:22px;font-weight:700;color:#0b1828;margin-bottom:4px}
+.page-hdr .sub{font-size:12px;color:#6b7280;margin-bottom:14px}
+.scenario-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.sc-tab{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:2px solid #d1d5db;color:#6b7280;background:#fff;transition:all .2s;white-space:nowrap}
+.sc-tab.active{background:#0b1828;color:#fff;border-color:#0b1828}
+.sc-tab:hover:not(.active){border-color:#9ca3af}
+.stepper{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:14px}
+.step-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;border:2px solid #d1d5db;color:#9ca3af;background:#fff;transition:all .2s;position:relative;z-index:1}
+.step-dot.done{background:#00c853;border-color:#00c853;color:#fff}
+.step-dot.current{background:#0b1828;border-color:#0b1828;color:#fff}
+.step-dot:hover:not(.current){transform:scale(1.1)}
+.step-line{width:28px;height:2px;background:#d1d5db;flex-shrink:0}
+.step-line.done{background:#00c853}
+.step-label-row{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:6px}
+.step-lbl{width:32px;text-align:center;font-size:9px;color:#9ca3af;font-weight:500}
+.step-lbl-spacer{width:28px;flex-shrink:0}
+.phone{width:400px;height:820px;background:#fff;border-radius:36px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.06);position:relative;user-select:none}
+.phone-inner{width:100%;height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.sbar{background:#0b1828;height:50px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 7px;color:#fff;font-size:14px;font-weight:600;flex-shrink:0}
+.sbar .ic{font-size:11px;opacity:.8}
+.dhdr{background:#0b1828;padding:14px 24px 18px;color:#fff;flex-shrink:0}
+.dhdr .title{font-size:17px;font-weight:700}
+.dhdr .desc{font-size:12px;opacity:.55;margin-top:3px}
+.bp-hero{background:linear-gradient(135deg,#0b1828 0%,#1a2d4a 100%);padding:28px 24px 22px;color:#fff;text-align:center;flex-shrink:0}
+.bp-hero .lbl{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:.5;margin-bottom:6px;font-weight:600}
+.bp-hero .big{font-size:36px;font-weight:800;letter-spacing:-.5px}
+.bp-hero .big.green{color:#00e676}
+.bp-hero .big.yellow{color:#ffab00}
+.bp-hero .big.red{color:#ff5252}
+.bp-hero .delta{display:inline-block;font-size:13px;font-weight:600;margin-top:4px;padding:3px 10px;border-radius:12px}
+.bp-hero .delta.up{background:rgba(0,230,118,.15);color:#00e676}
+.bp-hero .delta.down{background:rgba(255,82,82,.15);color:#ff5252}
+.content{padding:16px 24px;background:#f5f7fa;flex:1}
+.mcard{background:#fff;border-radius:14px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.mcard .stitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;margin-bottom:12px}
+.mrow{display:flex;justify-content:space-between;padding:7px 0;font-size:13px}
+.mrow .ml{color:#6b7280}.mrow .mv{font-weight:600}
+.mrow .mv.grn{color:#00c853}.mrow .mv.red{color:#f44336}.mrow .mv.ylw{color:#ff9800}
+.mrow .dlt{font-size:11px;font-weight:600;margin-left:6px}
+.mrow .dlt.up{color:#00c853}.mrow .dlt.dn{color:#f44336}
+.hbar-wrap{margin-top:10px}
+.hbar-lbl{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+.hbar-lbl .hl{color:#6b7280}.hbar-lbl .hv{font-weight:700}
+.hbar{height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden}
+.hbar .hfill{height:100%;border-radius:4px;transition:width .6s ease}
+.hbar .hfill.grn{background:#00c853}.hbar .hfill.ylw{background:#ff9800}.hbar .hfill.red{background:#f44336}
+.hbadge{display:inline-block;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700;margin-top:6px;text-transform:uppercase;letter-spacing:.3px}
+.hbadge.safe{background:#e8f5e9;color:#2e7d32}
+.hbadge.warn{background:#fff3e0;color:#e65100}
+.hbadge.danger{background:#ffebee;color:#c62828}
+.pos-section{margin-top:4px}
+.pos-section .stitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;margin-bottom:8px}
+.pcard{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 2px rgba(0,0,0,.04);display:flex;justify-content:space-between;align-items:center}
+.pcard.new{animation:highlightNew .8s ease-out}
+@keyframes highlightNew{0%{background:#e8f5e9;transform:scale(1.01)}100%{background:#fff;transform:scale(1)}}
+.pc-left{display:flex;align-items:center;gap:10px}
+.pc-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
+.pc-icon.oil{background:#ff8f00}.pc-icon.ndx{background:#1565c0}.pc-icon.tsla{background:#c62828}
+.pc-icon.lcid{background:#2e7d32}.pc-icon.spx{background:#6a1b9a}.pc-icon.gold{background:#f9a825}
+.pc-icon.aapl{background:#333}.pc-icon.default{background:#546e7a}
+.pc-info .tk{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px}
+.pc-info .nm{font-size:11px;color:#6b7280;margin-top:1px}
+.pc-info .mg{font-size:10px;color:#9ca3af;margin-top:2px}
+.tbadge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px}
+.tbadge.cfd{background:#f3e5f5;color:#7b1fa2}
+.tbadge.real{background:#e3f2fd;color:#1565c0}
+.tbadge.coll{background:#e8f5e9;color:#2e7d32;margin-left:4px}
+.pc-right{text-align:right}
+.pc-right .pnl{font-weight:700;font-size:14px}
+.pc-right .pnl.pos{color:#00c853}.pc-right .pnl.neg{color:#f44336}
+.pc-right .not{font-size:10px;color:#9ca3af;margin-top:2px}
+.tt-asset{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #f0f0f0;margin-bottom:14px}
+.tt-asset .tt-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#fff}
+.tt-asset .tt-info .tk{font-weight:700;font-size:17px}.tt-asset .tt-info .nm{font-size:12px;color:#6b7280}
+.tt-asset .tt-price{margin-left:auto;font-weight:700;font-size:17px}
+.amt-box{background:#f5f7fa;border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;cursor:pointer}
+.amt-box .al{color:#6b7280;font-size:14px}.amt-box .av{font-size:22px;font-weight:700}
+.sub-lbl{text-align:right;font-size:12px;color:#6b7280;margin-bottom:16px;padding-right:4px}
+.lev-badge{display:inline-flex;align-items:center;gap:5px;background:#e3f2fd;color:#1565c0;padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;margin-bottom:16px}
+.lev-badge .lk{font-size:10px}
+.lev-badge.real-badge{background:#e8f5e9;color:#2e7d32}
+.nm-toggle-wrap{background:#f5f7fa;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.nm-toggle-wrap .nm-lbl{font-size:13px;font-weight:600;color:#1a1a2e}
+.nm-toggle-wrap .nm-sub{font-size:11px;color:#6b7280;margin-top:2px}
+.nm-sw{width:44px;height:24px;border-radius:12px;position:relative;cursor:pointer;transition:background .2s}
+.nm-sw.off{background:#e5e7eb}.nm-sw.on{background:#00c853}
+.nm-sw .knb{width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s}
+.nm-sw.off .knb{left:2px}.nm-sw.on .knb{left:22px}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.drow:last-child{border-bottom:none}
+.drow .dl{color:#6b7280}.drow .dv{font-weight:600}
+.drow .dv.grn{color:#00c853}.drow .dv.red{color:#f44336}
+.divider{height:1px;background:#e5e7eb;margin:4px 0}
+.btn{width:100%;padding:15px;border:none;border-radius:26px;font-size:16px;font-weight:700;cursor:pointer;margin-top:16px;letter-spacing:.3px;transition:transform .1s,opacity .1s}
+.btn:active:not(:disabled){transform:scale(.97);opacity:.9}
+.btn-buy{background:#00c853;color:#fff}
+.btn-short{background:#f44336;color:#fff}
+.btn-dis{background:#d1d5db;color:#9ca3af;cursor:not-allowed}
+.btn-next{background:#0b1828;color:#fff}
+.btn-outline{background:transparent;border:2px solid #0b1828;color:#0b1828;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;display:inline-block}
+.disc{text-align:center;font-size:11px;color:#9ca3af;margin-top:12px;line-height:1.4;padding:0 6px}
+.deposit-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;flex:1;background:#fff}
+.dep-icon{font-size:56px;margin-bottom:16px}
+.dep-amt{font-size:42px;font-weight:800;color:#00c853;margin-bottom:8px;font-variant-numeric:tabular-nums}
+.dep-lbl{font-size:14px;color:#6b7280;margin-bottom:24px}
+.warn-card{margin:12px 0;border-radius:14px;padding:20px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.warn-card.yellow{background:#fff8e1;border-left:4px solid #ff9800}
+.warn-card.orange{background:#fff3e0;border-left:4px solid #ff5722}
+.warn-card .wt{font-weight:700;font-size:15px;margin-bottom:6px}
+.warn-card.yellow .wt{color:#e65100}.warn-card.orange .wt{color:#bf360c}
+.warn-card .wtx{font-size:13px;color:#4a4a4a;line-height:1.5}
+.msim{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.msim .ms-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:4px 0}
+.msim .ms-lbl{color:#6b7280;font-weight:500}
+.msim .ms-val{font-weight:700}
+.msim .ms-val.pos{color:#00c853}.msim .ms-val.neg{color:#f44336}
+.msim-anim{text-align:center;font-size:12px;color:#6b7280;padding:6px 0}
+.msim-anim .pulse{display:inline-block;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+.netting-box{background:#ede7f6;border-radius:12px;padding:16px;margin:12px 0}
+.netting-box .nb-title{font-size:13px;font-weight:700;color:#4a148c;margin-bottom:6px}
+.netting-box .nb-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.netting-box .nb-row .nl{color:#6b7280}.netting-box .nb-row .nv{font-weight:600;color:#4a148c}
+.suc-ov{position:absolute;inset:0;background:rgba(0,200,83,.92);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100;color:#fff}
+.suc-ov.show{display:flex;animation:fadeIn .2s ease-out}
+.suc-ck{width:72px;height:72px;border:4px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:14px;animation:scaleIn .3s ease-out}
+.suc-ov .sl{font-size:18px;font-weight:700}.suc-ov .ss{font-size:13px;opacity:.85;margin-top:3px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{transform:scale(.5)}to{transform:scale(1)}}
+.nav-btns{display:flex;gap:10px;padding:16px 24px;background:#fff;border-top:1px solid #f0f0f0;flex-shrink:0}
+.nav-btns .nb{flex:1;padding:13px;border:none;border-radius:24px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .1s}
+.nav-btns .nb:active{transform:scale(.97)}
+.nav-btns .nb-back{background:#f0f0f0;color:#1a1a2e}
+.nav-btns .nb-next{background:#0b1828;color:#fff}
+.nav-btns .nb:disabled{opacity:.4;cursor:not-allowed}
+.summary-badge{background:linear-gradient(135deg,#e8f5e9 0%,#c8e6c9 100%);border-radius:14px;padding:20px;text-align:center;margin:12px 0}
+.summary-badge .sb-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#2e7d32;font-weight:700;margin-bottom:6px}
+.summary-badge .sb-val{font-size:28px;font-weight:800;color:#1b5e20}
+.summary-badge .sb-sub{font-size:12px;color:#4caf50;margin-top:4px}
+.coll-callout{background:#e8f5e9;border-radius:10px;padding:12px 16px;margin:10px 0;display:flex;align-items:center;gap:10px}
+.coll-callout .cc-icon{font-size:20px}.coll-callout .cc-text{font-size:12px;color:#2e7d32;font-weight:500;line-height:1.4}
+.spacer{height:20px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="page-hdr">
+  <h1>Buying Power Flow — Interactive Prototype</h1>
+  <p class="sub">Margin Account with auto-applied leverage, no product toggle. Click through each scenario step-by-step.</p>
+</div>
+
+<div class="scenario-tabs" id="scenarioTabs"></div>
+<div id="stepperWrap"></div>
+
+<div class="phone" style="position:relative">
+  <div class="suc-ov" id="sucOv">
+    <div class="suc-ck">&#10003;</div>
+    <div class="sl" id="sucLbl">Order Placed</div>
+    <div class="ss" id="sucSub"></div>
+  </div>
+  <div class="phone-inner" id="phoneInner"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var ASSETS={
+  OIL:{tk:'OIL',nm:'Crude Oil WTI',price:78.50,icon:'oil',letter:'O',lev:20,type:'cfd',supportsNoMargin:false},
+  NDX:{tk:'NDX',nm:'Nasdaq 100',price:18200,icon:'ndx',letter:'N',lev:20,type:'cfd',supportsNoMargin:false},
+  TSLA:{tk:'TSLA',nm:'Tesla Inc',price:175.50,icon:'tsla',letter:'T',lev:5,type:'cfd',supportsNoMargin:true},
+  LCID:{tk:'LCID',nm:'Lucid Group Inc',price:3.20,icon:'lcid',letter:'L',lev:5,type:'cfd',supportsNoMargin:true},
+  SPX:{tk:'S&P 500',nm:'S&P 500 Index',price:5200,icon:'spx',letter:'S',lev:20,type:'cfd',supportsNoMargin:false},
+  GOLD:{tk:'GOLD',nm:'Gold Spot',price:2150,icon:'gold',letter:'G',lev:20,type:'cfd',supportsNoMargin:false},
+  AAPL:{tk:'AAPL',nm:'Apple Inc',price:178.00,icon:'aapl',letter:'A',lev:5,type:'cfd',supportsNoMargin:true}
+};
+
+var SCENARIOS=[
+  {id:'baseline',name:'1: Baseline Flow',steps:[
+    {type:'deposit',amount:100000},
+    {type:'trade',asset:'OIL',notional:200000,side:'buy'},
+    {type:'trade',asset:'NDX',notional:500000,side:'buy'},
+    {type:'trade',asset:'TSLA',notional:50000,side:'buy'},
+    {type:'trade',asset:'LCID',notional:50000,side:'buy',noMarginDefault:true}
+  ]},
+  {id:'profit',name:'2: Profit Expansion',steps:[
+    {type:'deposit',amount:50000},
+    {type:'trade',asset:'SPX',notional:500000,side:'buy'},
+    {type:'market',direction:'up',pct:5,label:'Market rallies +5%'},
+    {type:'trade',asset:'GOLD',notional:200000,side:'buy'},
+    {type:'summary',label:'Unrealized P&L expanded Buying Power'}
+  ]},
+  {id:'pressure',name:'3: Margin Pressure',steps:[
+    {type:'deposit',amount:75000},
+    {type:'trade',asset:'NDX',notional:500000,side:'buy'},
+    {type:'trade',asset:'OIL',notional:200000,side:'buy'},
+    {type:'trade',asset:'AAPL',notional:20000,side:'buy',noMarginDefault:true},
+    {type:'market',direction:'down',pct:8,label:'Market drops -8%'},
+    {type:'warning',label:'Margin Warning \u2014 Action Required'}
+  ]},
+  {id:'hedged',name:'4: Hedged Exposure',steps:[
+    {type:'deposit',amount:100000},
+    {type:'trade',asset:'SPX',notional:500000,side:'buy'},
+    {type:'trade',asset:'SPX',notional:500000,side:'short'},
+    {type:'netting',label:'Risk netting reduces margin'},
+    {type:'summary',label:'Netting freed margin, increasing Buying Power'}
+  ]}
+];
+
+var state={scenario:0,step:0,maxStep:0,noMarginOn:false,accounts:[]};
+
+function initAccount(d){return{deposit:d,equity:d,usedMargin:0,positions:[],unrealizedPnl:0,marketApplied:false,nettingApplied:false}}
+function cloneAcct(a){return{deposit:a.deposit,equity:a.equity,usedMargin:a.usedMargin,positions:a.positions.map(function(p){return Object.assign({},p)}),unrealizedPnl:a.unrealizedPnl,marketApplied:a.marketApplied,nettingApplied:a.nettingApplied}}
+
+function buildSnapshots(scIdx){
+  var sc=SCENARIOS[scIdx];var snaps=[];var acct=null;
+  for(var i=0;i<sc.steps.length;i++){
+    var s=sc.steps[i];
+    if(s.type==='deposit'){acct=initAccount(s.amount);snaps.push(cloneAcct(acct));}
+    else if(s.type==='trade'){
+      acct=cloneAcct(snaps[snaps.length-1]);
+      var asset=ASSETS[s.asset];var isNM=!!s.noMarginDefault;
+      var lev=isNM?1:asset.lev;var mUsed=isNM?0:s.notional/lev;var cUsed=isNM?s.notional:0;
+      acct.usedMargin+=mUsed;
+      acct.positions.push({asset:s.asset,side:s.side,notional:s.notional,leverage:lev,marginUsed:mUsed,type:isNM?'real':'cfd',pnl:0,isNew:true,cashUsed:cUsed});
+      for(var j=0;j<acct.positions.length-1;j++)acct.positions[j].isNew=false;
+      snaps.push(cloneAcct(acct));
+    } else if(s.type==='market'){
+      acct=cloneAcct(snaps[snaps.length-1]);
+      var pm=s.pct/100*(s.direction==='up'?1:-1);var tp=0;
+      for(var k=0;k<acct.positions.length;k++){var p=acct.positions[k];var dr=p.side==='buy'?1:-1;p.pnl=p.notional*pm*dr;tp+=p.pnl;}
+      acct.unrealizedPnl=tp;acct.equity=acct.deposit+tp;acct.marketApplied=true;snaps.push(cloneAcct(acct));
+    } else if(s.type==='netting'){
+      acct=cloneAcct(snaps[snaps.length-1]);
+      var gm=0;for(var m=0;m<acct.positions.length;m++)gm+=acct.positions[m].marginUsed;
+      acct.usedMargin=gm*0.5;acct.nettingApplied=true;snaps.push(cloneAcct(acct));
+    } else if(s.type==='warning'||s.type==='summary'){
+      acct=cloneAcct(snaps[snaps.length-1]);snaps.push(cloneAcct(acct));
+    }
+  }
+  return snaps;
+}
+
+function freeMargin(a){return a.equity-a.usedMargin-realCashUsed(a)}
+function realCashUsed(a){var t=0;a.positions.forEach(function(p){if(p.type==='real')t+=p.cashUsed||0});return t}
+function marginPct(a){if(a.usedMargin===0)return 0;return Math.min(100,Math.round(a.usedMargin/(a.equity-realCashUsed(a))*100))}
+function fmt(n){var s=n<0?'-':'';var v=Math.abs(n);return s+'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function fmtK(n){var s=n<0?'-':'';var v=Math.abs(n);if(v>=1000)return s+'$'+Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');return s+'$'+v.toFixed(2)}
+function fmtPct(n){return(n>=0?'+':'')+n.toFixed(1)+'%'}
+
+function renderScenarioTabs(){
+  var h='';SCENARIOS.forEach(function(sc,i){h+='<div class="sc-tab'+(i===state.scenario?' active':'')+'" data-sc="'+i+'">'+sc.name+'</div>';});
+  document.getElementById('scenarioTabs').innerHTML=h;
+}
+
+function renderStepper(){
+  var sc=SCENARIOS[state.scenario];
+  var h1='<div class="stepper">';var h2='<div class="step-label-row">';
+  var labels=['Deposit'];
+  for(var i=1;i<sc.steps.length;i++){var s=sc.steps[i];
+    if(s.type==='trade'){labels.push(ASSETS[s.asset].tk);}
+    else if(s.type==='market')labels.push('Market');
+    else if(s.type==='netting')labels.push('Netting');
+    else if(s.type==='warning')labels.push('Warning');
+    else if(s.type==='summary')labels.push('Summary');
+  }
+  for(var j=0;j<sc.steps.length;j++){
+    if(j>0){h1+='<div class="step-line'+(j<=state.step?' done':'')+'"\></div>';h2+='<div class="step-lbl-spacer"></div>';}
+    var cls=j<state.step?'done':(j===state.step?'current':'');
+    h1+='<div class="step-dot '+cls+'" data-step="'+j+'">'+(j+1)+'</div>';
+    h2+='<div class="step-lbl">'+labels[j]+'</div>';
+  }
+  h1+='</div>';h2+='</div>';document.getElementById('stepperWrap').innerHTML=h2+h1;
+}
+
+function getSnaps(){if(!state.accounts[state.scenario])state.accounts[state.scenario]=buildSnapshots(state.scenario);return state.accounts[state.scenario];}
+
+function render(){
+  renderScenarioTabs();renderStepper();
+  var sc=SCENARIOS[state.scenario];var step=sc.steps[state.step];
+  var snaps=getSnaps();var acct=snaps[state.step];var prev=state.step>0?snaps[state.step-1]:null;
+  var el=document.getElementById('phoneInner');var h='';
+  if(step.type==='deposit')h+=renderDeposit(step,acct);
+  else if(step.type==='trade'){h+=renderDashboard(acct,prev,step);h+=renderTradeTicket(step,acct);}
+  else if(step.type==='market'){h+=renderDashboard(acct,prev,step);h+=renderMarketSim(step,acct,prev);}
+  else if(step.type==='warning'){h+=renderDashboard(acct,prev,step);h+=renderWarning(acct);}
+  else if(step.type==='netting'){h+=renderDashboard(acct,prev,step);h+=renderNetting(acct,prev);}
+  else if(step.type==='summary'){h+=renderDashboard(acct,prev,step);h+=renderSummary(acct);}
+  h+=renderNavButtons();el.innerHTML=h;el.scrollTop=0;
+}
+
+function renderDeposit(step,acct){
+  var h='<div class="sbar"><span>9:41</span><span class="ic">&#9679;&#9679;&#9679;&#9679;</span></div>';
+  h+='<div class="dhdr"><div class="title">Margin Account</div><div class="desc">Deposit Funds</div></div>';
+  h+='<div class="deposit-screen">';
+  h+='<div class="dep-icon">&#128176;</div>';
+  h+='<div class="dep-amt">'+fmtK(step.amount)+'</div>';
+  h+='<div class="dep-lbl">Deposited to your Margin Account</div>';
+  h+='<div class="mcard" style="width:100%;text-align:left">';
+  h+='<div class="stitle">Account Overview</div>';
+  h+='<div class="mrow"><span class="ml">Equity</span><span class="mv">'+fmtK(acct.equity)+'</span></div>';
+  h+='<div class="mrow"><span class="ml">Used Margin</span><span class="mv">'+fmtK(acct.usedMargin)+'</span></div>';
+  h+='<div class="mrow"><span class="ml">Free Margin</span><span class="mv grn">'+fmtK(freeMargin(acct))+'</span></div>';
+  h+='<div class="mrow"><span class="ml">Total Buying Power</span><span class="mv" style="font-size:15px;color:#0b1828">'+fmtK(freeMargin(acct))+'</span></div>';
+  h+='</div></div>';return h;
+}
+
+function renderDashboard(acct,prev,step){
+  var fm=freeMargin(acct);var prevFm=prev?freeMargin(prev):fm;var fmDelta=fm-prevFm;
+  var eqDelta=prev?(acct.equity-prev.equity):0;var umDelta=prev?(acct.usedMargin-prev.usedMargin):0;
+  var mp=marginPct(acct);var hColor=mp<50?'grn':(mp<80?'ylw':'red');
+  var hBadge=mp<50?'safe':(mp<80?'warn':'danger');
+  var hLabel=mp<50?'Healthy':(mp<80?'Watch':'Danger');
+  var bpColor=fm>50000?'green':(fm>20000?'yellow':'red');
+  var h='<div class="sbar"><span>9:41</span><span class="ic">&#9679;&#9679;&#9679;&#9679;</span></div>';
+  h+='<div class="bp-hero"><div class="lbl">Total Buying Power</div><div class="big '+bpColor+'">'+fmtK(fm)+'</div>';
+  if(fmDelta!==0)h+='<div class="delta '+(fmDelta>0?'up':'down')+'">'+(fmDelta>0?'+':'')+fmtK(fmDelta)+'</div>';
+  h+='</div><div class="content"><div class="mcard"><div class="stitle">Account Breakdown</div>';
+  h+='<div class="mrow"><span class="ml">Equity</span><span class="mv">'+fmtK(acct.equity);
+  if(eqDelta!==0)h+='<span class="dlt '+(eqDelta>0?'up':'dn')+'">'+(eqDelta>0?'+':'')+fmtK(eqDelta)+'</span>';
+  h+='</span></div>';
+  h+='<div class="mrow"><span class="ml">Used Margin</span><span class="mv">'+fmtK(acct.usedMargin);
+  if(umDelta!==0)h+='<span class="dlt '+(umDelta>0?'dn':'up')+'">'+(umDelta>0?'+':'')+fmtK(umDelta)+'</span>';
+  h+='</span></div>';
+  var rcu=realCashUsed(acct);
+  if(rcu>0)h+='<div class="mrow"><span class="ml">Real Stock Holdings</span><span class="mv">'+fmtK(rcu)+'</span></div>';
+  h+='<div class="mrow"><span class="ml">Free Margin</span><span class="mv '+(fm>0?'grn':'red')+'">'+fmtK(fm)+'</span></div>';
+  if(acct.unrealizedPnl!==0)h+='<div class="mrow"><span class="ml">Unrealized P&L</span><span class="mv '+(acct.unrealizedPnl>0?'grn':'red')+'">'+(acct.unrealizedPnl>0?'+':'')+fmtK(acct.unrealizedPnl)+'</span></div>';
+  h+='<div class="hbar-wrap"><div class="hbar-lbl"><span class="hl">Margin Utilization</span><span class="hv">'+mp+'%</span></div>';
+  h+='<div class="hbar"><div class="hfill '+hColor+'" style="width:'+mp+'%"></div></div>';
+  h+='<div class="hbadge '+hBadge+'">'+hLabel+'</div></div></div>';
+  if(acct.positions.length>0){
+    h+='<div class="pos-section"><div class="stitle">Open Positions</div>';
+    acct.positions.forEach(function(p){var a=ASSETS[p.asset];
+      h+='<div class="pcard'+(p.isNew?' new':'')+'">';
+      h+='<div class="pc-left"><div class="pc-icon '+a.icon+'">'+a.letter+'</div>';
+      h+='<div class="pc-info"><div class="tk">'+a.tk+' <span class="tbadge '+(p.type==='real'?'real':'cfd')+'">'+(p.type==='real'?'Stock (Real)':'CFD')+' x'+p.leverage+'</span>';
+      if(p.type==='real')h+='<span class="tbadge coll">Collateral</span>';
+      h+='</div><div class="nm">'+(p.side==='buy'?'Long':'Short')+' &middot; '+a.nm+'</div>';
+      h+='<div class="mg">Notional: '+fmtK(p.notional)+(p.marginUsed>0?' &middot; Margin: '+fmtK(p.marginUsed):'')+'</div></div></div>';
+      h+='<div class="pc-right">';
+      if(p.pnl!==0){h+='<div class="pnl '+(p.pnl>0?'pos':'neg')+'">'+(p.pnl>0?'+':'')+fmtK(p.pnl)+'</div><div class="not">'+fmtPct(p.pnl/p.notional*100)+'</div>';}
+      else h+='<div class="pnl" style="color:#9ca3af">$0.00</div>';
+      h+='</div></div>';});
+    h+='</div>';}
+  var hasReal=acct.positions.some(function(p){return p.type==='real'});
+  if(hasReal)h+='<div class="coll-callout"><div class="cc-icon">&#9989;</div><div class="cc-text">Real stock holdings contribute as collateral to your Buying Power within the Margin Account.</div></div>';
+  h+='<div class="spacer"></div></div>';return h;
+}
+
+function renderTradeTicket(step,acct){
+  var asset=ASSETS[step.asset];var isNM=!!step.noMarginDefault;
+  var lev=isNM?1:asset.lev;var mReq=isNM?0:step.notional/lev;
+  var prevSnaps=getSnaps();var prevAcct=state.step>0?prevSnaps[state.step-1]:acct;var prevFm=freeMargin(prevAcct);
+  var remainFm=isNM?(prevFm-step.notional):(prevFm-mReq);
+  var h='<div style="padding:16px 24px;background:#fff;border-top:4px solid '+(step.side==='buy'?'#00c853':'#f44336')+'">';
+  h+='<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;font-weight:700;margin-bottom:10px">'+(step.side==='buy'?'Buy':'Short')+' Order</div>';
+  h+='<div class="tt-asset"><div class="tt-icon pc-icon '+asset.icon+'">'+asset.letter+'</div>';
+  h+='<div class="tt-info"><div class="tk">'+asset.tk+'</div><div class="nm">'+asset.nm+'</div></div>';
+  h+='<div class="tt-price">'+asset.price.toLocaleString()+'</div></div>';
+  h+='<div class="amt-box"><span class="al">Notional</span><span class="av">'+fmtK(step.notional)+'</span></div>';
+  h+='<div class="sub-lbl">Margin required: '+(isNM?'None (Real purchase)':fmtK(mReq))+'</div>';
+  h+='<div class="lev-badge'+(isNM?' real-badge':'')+'"\><span class="lk">&#128274;</span> '+(isNM?'No Leverage \u2014 Real Stock':'Leverage: x'+lev+' (auto-applied)')+'</div>';
+  if(asset.supportsNoMargin){
+    h+='<div class="nm-toggle-wrap"><div><div class="nm-lbl">Buy without margin</div>';
+    h+='<div class="nm-sub">Purchase real stock at x1 \u2014 no overnight fees</div></div>';
+    h+='<div class="nm-sw '+(isNM?'on':'off')+'" data-action="toggle-nm"><div class="knb"></div></div></div>';
+  }
+  h+='<div class="drow"><span class="dl">Order Type</span><span class="dv">Market Order</span></div>';
+  h+='<div class="drow"><span class="dl">Product</span><span class="dv" style="color:'+(isNM?'#1565c0':'#7b1fa2')+'">'+(isNM?'Stock (Real)':'CFD')+'</span></div>';
+  if(!isNM)h+='<div class="drow"><span class="dl">Overnight Fee</span><span class="dv">-$'+(step.notional*0.000078).toFixed(2)+'/day</span></div>';
+  h+='<div class="divider"></div>';
+  h+='<div class="drow"><span class="dl">Margin Required</span><span class="dv">'+(isNM?'$0 (collateral)':fmtK(mReq))+'</span></div>';
+  if(isNM)h+='<div class="drow"><span class="dl">Cash Required</span><span class="dv">'+fmtK(step.notional)+'</span></div>';
+  h+='<div class="drow"><span class="dl">Remaining Free Margin</span><span class="dv '+(remainFm>=0?'grn':'red')+'">'+fmtK(remainFm)+'</span></div>';
+  h+='<div class="disc">All trades execute within your Margin Account. Leverage is auto-applied based on asset class.</div></div>';return h;
+}
+
+function renderMarketSim(step,acct,prev){
+  var h='<div style="padding:0 24px"><div class="msim">';
+  h+='<div style="font-size:12px;font-weight:700;color:#0b1828;margin-bottom:8px">&#128200; Market Movement</div>';
+  h+='<div class="msim-anim"><span class="pulse">'+step.label+'</span></div>';
+  h+='<div class="ms-row"><span class="ms-lbl">Impact on Equity</span><span class="ms-val '+(step.direction==='up'?'pos':'neg')+'">'+(acct.unrealizedPnl>0?'+':'')+fmtK(acct.unrealizedPnl)+'</span></div>';
+  h+='<div class="ms-row"><span class="ms-lbl">New Equity</span><span class="ms-val">'+fmtK(acct.equity)+'</span></div>';
+  h+='<div class="ms-row"><span class="ms-lbl">Free Margin Change</span><span class="ms-val '+(step.direction==='up'?'pos':'neg')+'">'+(acct.unrealizedPnl>0?'+':'')+fmtK(acct.unrealizedPnl)+'</span></div>';
+  h+='</div></div>';return h;
+}
+
+function renderWarning(acct){
+  var h='<div style="padding:0 24px">';
+  h+='<div class="warn-card yellow"><div class="wt">&#9888;&#65039; Margin Warning</div>';
+  h+='<div class="wtx">Your margin utilization has increased significantly due to market movements. Consider reducing positions or adding funds to maintain healthy buying power.</div></div>';
+  h+='<div class="warn-card orange"><div class="wt">Recommended Actions</div>';
+  h+='<div class="wtx">&bull; Deposit additional funds<br>&bull; Close or reduce losing positions<br>&bull; Set Stop Loss on open positions</div></div></div>';return h;
+}
+
+function renderNetting(acct,prev){
+  var gm=0;acct.positions.forEach(function(p){gm+=p.notional/p.leverage});
+  var nm=acct.usedMargin;var saved=gm-nm;
+  var h='<div style="padding:0 24px"><div class="netting-box">';
+  h+='<div class="nb-title">&#128737; Risk Netting Applied</div>';
+  h+='<div class="nb-row"><span class="nl">Gross Margin (Long + Short)</span><span class="nv">'+fmtK(gm)+'</span></div>';
+  h+='<div class="nb-row"><span class="nl">Net Margin (after 50% offset)</span><span class="nv">'+fmtK(nm)+'</span></div>';
+  h+='<div class="nb-row"><span class="nl">Margin Saved</span><span class="nv" style="color:#2e7d32">'+fmtK(saved)+'</span></div>';
+  h+='<div style="margin-top:8px;font-size:11px;color:#6b7280;line-height:1.4">Opposing positions on the same asset reduce net risk exposure, allowing the system to release margin back to your Buying Power.</div>';
+  h+='</div></div>';return h;
+}
+
+function renderSummary(acct){
+  var firstSnap=getSnaps()[0];var endFm=freeMargin(acct);
+  var h='<div style="padding:0 24px"><div class="summary-badge">';
+  h+='<div class="sb-title">Scenario Complete</div><div class="sb-val">'+fmtK(endFm)+'</div>';
+  h+='<div class="sb-sub">Available Buying Power</div></div>';
+  h+='<div class="mcard"><div class="stitle">Journey Summary</div>';
+  h+='<div class="mrow"><span class="ml">Starting Deposit</span><span class="mv">'+fmtK(acct.deposit)+'</span></div>';
+  h+='<div class="mrow"><span class="ml">Positions Opened</span><span class="mv">'+acct.positions.length+'</span></div>';
+  h+='<div class="mrow"><span class="ml">Total Used Margin</span><span class="mv">'+fmtK(acct.usedMargin)+'</span></div>';
+  if(acct.unrealizedPnl!==0)h+='<div class="mrow"><span class="ml">Unrealized P&L</span><span class="mv '+(acct.unrealizedPnl>0?'grn':'red')+'">'+(acct.unrealizedPnl>0?'+':'')+fmtK(acct.unrealizedPnl)+'</span></div>';
+  h+='<div class="mrow"><span class="ml">Final Free Margin</span><span class="mv grn">'+fmtK(endFm)+'</span></div></div>';
+  if(state.scenario===1)h+='<div class="coll-callout"><div class="cc-icon">&#128161;</div><div class="cc-text"><strong>Key Insight:</strong> Unrealized profits on CFD positions increase your equity, which in turn expands your Free Margin and Buying Power \u2014 allowing you to open additional positions without depositing more funds.</div></div>';
+  if(state.scenario===3)h+='<div class="coll-callout"><div class="cc-icon">&#128737;</div><div class="cc-text"><strong>Key Insight:</strong> Hedging with opposing positions on the same asset triggers risk netting, reducing your effective margin requirement and freeing up Buying Power.</div></div>';
+  h+='</div>';return h;
+}
+
+function renderNavButtons(){
+  var sc=SCENARIOS[state.scenario];var isFirst=state.step===0;var isLast=state.step===sc.steps.length-1;var step=sc.steps[state.step];
+  var h='<div class="nav-btns">';
+  h+='<button class="nb nb-back" data-action="prev"'+(isFirst?' disabled':'')+'>&#8592; Back</button>';
+  if(step.type==='trade')h+='<button class="nb" style="background:#00c853;color:#fff" data-action="execute">Execute &#10003;</button>';
+  else if(isLast)h+='<button class="nb nb-next" data-action="next" disabled>End</button>';
+  else h+='<button class="nb nb-next" data-action="next">Next &#8594;</button>';
+  h+='</div>';return h;
+}
+
+function showSuccess(cb){
+  var sc=SCENARIOS[state.scenario];var step=sc.steps[state.step];var asset=ASSETS[step.asset];
+  var isNM=!!step.noMarginDefault;var ov=document.getElementById('sucOv');
+  document.getElementById('sucSub').textContent=(step.side==='buy'?'Bought':'Shorted')+' '+asset.tk+' '+(isNM?'(Real Stock)':'(CFD x'+asset.lev+')')+' \u2014 '+fmtK(step.notional);
+  ov.classList.add('show');setTimeout(function(){ov.classList.remove('show');if(cb)cb();},1200);
+}
+
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-sc]');
+  if(t){state.scenario=parseInt(t.getAttribute('data-sc'));state.step=0;state.maxStep=0;render();return;}
+  var sd=e.target.closest('[data-step]');
+  if(sd){var si=parseInt(sd.getAttribute('data-step'));if(si<=state.maxStep){state.step=si;render();}return;}
+  var act=e.target.closest('[data-action]');if(!act)return;
+  var a=act.getAttribute('data-action');
+  if(a==='next'||a==='execute'){
+    var sc=SCENARIOS[state.scenario];
+    if(a==='execute'){showSuccess(function(){if(state.step<sc.steps.length-1){state.step++;if(state.step>state.maxStep)state.maxStep=state.step;render();}});}
+    else{if(state.step<sc.steps.length-1){state.step++;if(state.step>state.maxStep)state.maxStep=state.step;render();}}
+  } else if(a==='prev'){if(state.step>0){state.step--;render();}}
+  else if(a==='toggle-nm'){var sc2=SCENARIOS[state.scenario];var step2=sc2.steps[state.step];step2.noMarginDefault=!step2.noMarginDefault;state.accounts[state.scenario]=null;render();}
+});
+
+render();
+})();
+</script>
+
+</body>
+</html>
