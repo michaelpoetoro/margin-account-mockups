@@ -783,8 +783,6 @@
 
   // BRD-aligned asset definitions
   // Leverage per BRD: Stocks CFD x5 (Tesla example), Commodities x10 (Oil example), Indices x20
-  // MMR Rate per BRD: 0.50 ("start with 50% and adjust later on" — BRD page 11)
-  var MMR_RATE = 0.50;
 
   var ASSETS = {
     OIL:  { tk: 'OIL',     nm: 'Crude Oil WTI',   price: 78.50,  icon: 'oil',  letter: 'O', lev: 10, supportsNoMargin: false },
@@ -809,7 +807,7 @@
       { type: 'trade', asset: 'SPX', notional: 50000, side: 'buy' },
       { type: 'market', direction: 'up', pct: 5, label: 'Market rallies +5%' },
       { type: 'trade', asset: 'GOLD', notional: 20000, side: 'buy' },
-      { type: 'summary', label: 'Unrealized P&L expanded Remaining Margin' }
+      { type: 'summary', label: 'Unrealized P&L expanded Unallocated Cash' }
     ]},
     { id: 'pressure', name: '3: Margin Pressure', steps: [
       { type: 'deposit', amount: 75000 },
@@ -824,7 +822,7 @@
       { type: 'trade', asset: 'SPX', notional: 80000, side: 'buy' },
       { type: 'trade', asset: 'SPX', notional: 80000, side: 'short' },
       { type: 'netting', label: 'Risk netting reduces margin' },
-      { type: 'summary', label: 'Netting freed margin, increasing Remaining Margin' }
+      { type: 'summary', label: 'Netting freed margin, increasing Unallocated Cash' }
     ]}
   ];
 
@@ -835,19 +833,20 @@
     accounts: []
   };
 
-  // BRD formulas:
+  // BRD formulas (aligned with Buying Power Screen):
   // IMR = Notional / Applied Leverage
-  // MMR = Notional * MMR_RATE
-  // Equity = Cash Balance + Unrealized P&L
-  // Remaining Margin = Equity - Total IMR
-  // Margin Health Ratio = Equity / Total MMR (infinity if no MMR)
+  // Net Liquidation Value = Cash Deposit + Unrealized P&L
+  // Unallocated Cash = Net Liquidation Value - Total IMR
+  // Total Exposure = Sum of all position notionals
+  // Loan Financed = Total Exposure - Total IMR
+  // Margin Utilization = Total IMR / Net Liquidation Value * 100
 
   function initAccount(depositAmt) {
     return {
       deposit: depositAmt,
-      equity: depositAmt,
+      netLiquidation: depositAmt,
       totalIMR: 0,
-      totalMMR: 0,
+      totalExposure: 0,
       positions: [],
       unrealizedPnl: 0,
       marketApplied: false,
@@ -857,7 +856,7 @@
 
   function cloneAcct(a) {
     return {
-      deposit: a.deposit, equity: a.equity, totalIMR: a.totalIMR, totalMMR: a.totalMMR,
+      deposit: a.deposit, netLiquidation: a.netLiquidation, totalIMR: a.totalIMR, totalExposure: a.totalExposure,
       positions: a.positions.map(function(p) { return Object.assign({}, p); }),
       unrealizedPnl: a.unrealizedPnl, marketApplied: a.marketApplied, nettingApplied: a.nettingApplied
     };
@@ -881,14 +880,13 @@
         var isNoMargin = !!s.noMarginDefault;
         var lev = isNoMargin ? 1 : asset.lev;
         var imr = s.notional / lev;
-        var mmr = s.notional * MMR_RATE;
 
         acct.totalIMR += imr;
-        acct.totalMMR += mmr;
+        acct.totalExposure += s.notional;
 
         acct.positions.push({
           asset: s.asset, side: s.side, notional: s.notional, leverage: lev,
-          imr: imr, mmr: mmr, type: isNoMargin ? 'real' : 'cfd',
+          imr: imr, type: isNoMargin ? 'real' : 'cfd',
           pnl: 0, isNew: true
         });
 
@@ -906,14 +904,13 @@
           totalPnl += p.pnl;
         }
         acct.unrealizedPnl = totalPnl;
-        acct.equity = acct.deposit + totalPnl;
+        acct.netLiquidation = acct.deposit + totalPnl;
         acct.marketApplied = true;
         snaps.push(cloneAcct(acct));
 
       } else if (s.type === 'netting') {
         acct = cloneAcct(snaps[snaps.length - 1]);
         acct.totalIMR = acct.totalIMR * 0.5;
-        acct.totalMMR = acct.totalMMR * 0.5;
         acct.nettingApplied = true;
         snaps.push(cloneAcct(acct));
 
@@ -925,23 +922,23 @@
     return snaps;
   }
 
-  // BRD: Remaining Margin = Equity - Total IMR
-  function remainingMargin(a) {
-    return a.equity - a.totalIMR;
+  function unallocatedCash(a) {
+    return a.netLiquidation - a.totalIMR;
   }
 
-  // BRD: Margin Health Ratio = Equity / Total MMR
-  function marginHealthRatio(a) {
-    if (a.totalMMR === 0) return Infinity;
-    return a.equity / a.totalMMR;
+  function loanFinanced(a) {
+    return a.totalExposure - a.totalIMR;
   }
 
-  function healthBand(ratio) {
-    if (ratio === Infinity) return { label: 'Safe', cls: 'safe', color: 'green', pct: 100 };
-    if (ratio >= 1.5) return { label: 'Safe', cls: 'safe', color: 'green', pct: 100 };
-    if (ratio >= 1.2) return { label: 'Warning', cls: 'warning', color: 'yellow', pct: Math.min(100, ratio / 1.5 * 100) };
-    if (ratio > 1.0) return { label: 'Close-only', cls: 'close-only', color: 'red', pct: Math.min(100, ratio / 1.5 * 100) };
-    return { label: 'Liquidation Risk', cls: 'liquidation', color: 'red', pct: Math.min(100, ratio / 1.5 * 100) };
+  function marginUtilization(a) {
+    if (a.netLiquidation <= 0) return 100;
+    return a.totalIMR / a.netLiquidation * 100;
+  }
+
+  function healthBand(util) {
+    if (util < 50) return { label: 'Healthy', cls: 'safe', color: 'green', pct: util };
+    if (util < 80) return { label: 'Warning', cls: 'warning', color: 'yellow', pct: util };
+    return { label: 'Danger', cls: 'liquidation', color: 'red', pct: Math.min(100, util) };
   }
 
   function fmt(n) {
@@ -958,7 +955,6 @@
   }
 
   function fmtPct(n) { return (n >= 0 ? '+' : '') + n.toFixed(1) + '%'; }
-  function fmtRatio(r) { return r === Infinity ? '∞' : (r * 100).toFixed(0) + '%'; }
 
   // ---- RENDERING ----
 
@@ -1048,10 +1044,9 @@
 
     h += '<div class="margin-overview" style="width:100%;text-align:left;margin:0;">';
     h += '<div class="section-title">Account Overview</div>';
-    h += '<div class="metric-row"><span class="label">Equity</span><span class="value">' + fmtK(acct.equity) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Net Liquidation Value</span><span class="value">' + fmtK(acct.netLiquidation) + '</span></div>';
     h += '<div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">' + fmtK(acct.totalIMR) + '</span></div>';
-    h += '<div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">' + fmtK(acct.totalMMR) + '</span></div>';
-    h += '<div class="metric-row"><span class="label">Remaining Margin</span><span class="value green">' + fmtK(remainingMargin(acct)) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Unallocated Cash</span><span class="value green">' + fmtK(unallocatedCash(acct)) + '</span></div>';
     h += '</div>';
 
     h += '</div>';
@@ -1059,65 +1054,56 @@
   }
 
   function renderDashboard(acct, prev) {
-    var rm = remainingMargin(acct);
-    var prevRm = prev ? remainingMargin(prev) : rm;
-    var rmDelta = rm - prevRm;
-    var eqDelta = prev ? (acct.equity - prev.equity) : 0;
+    var uc = unallocatedCash(acct);
+    var prevUc = prev ? unallocatedCash(prev) : uc;
+    var ucDelta = uc - prevUc;
+    var nlvDelta = prev ? (acct.netLiquidation - prev.netLiquidation) : 0;
     var imrDelta = prev ? (acct.totalIMR - prev.totalIMR) : 0;
-    var mmrDelta = prev ? (acct.totalMMR - prev.totalMMR) : 0;
 
-    var hr = marginHealthRatio(acct);
-    var band = healthBand(hr);
-    var bpColor = rm > 50000 ? 'green' : (rm > 20000 ? 'yellow' : 'red');
+    var util = marginUtilization(acct);
+    var band = healthBand(util);
+    var heroColor = acct.netLiquidation > 0 ? 'green' : 'red';
 
     var h = renderStatusBar();
 
-    // Buying Power hero
     h += '<div class="bp-hero">';
-    h += '<div class="lbl">Remaining Margin</div>';
-    h += '<div class="big ' + bpColor + '">' + fmtK(rm) + '</div>';
-    if (rmDelta !== 0) {
-      h += '<div class="delta ' + (rmDelta > 0 ? 'up' : 'down') + '">' + (rmDelta > 0 ? '+' : '') + fmtK(rmDelta) + '</div>';
+    h += '<div class="lbl">Net Liquidation Value</div>';
+    h += '<div class="big ' + heroColor + '">' + fmtK(acct.netLiquidation) + '</div>';
+    if (nlvDelta !== 0) {
+      h += '<div class="delta ' + (nlvDelta > 0 ? 'up' : 'down') + '">' + (nlvDelta > 0 ? '+' : '') + fmtK(nlvDelta) + '</div>';
     }
     h += '</div>';
 
-    // Account breakdown card
     h += '<div class="portfolio-bg">';
     h += '<div class="margin-overview">';
-    h += '<div class="section-title">Account Breakdown (per BRD)</div>';
+    h += '<div class="section-title">Account Breakdown</div>';
 
-    h += '<div class="metric-row"><span class="label">Equity</span><span class="value">' + fmtK(acct.equity);
-    if (eqDelta !== 0) h += '<span class="metric-delta ' + (eqDelta > 0 ? 'up' : 'dn') + '">' + (eqDelta > 0 ? '+' : '') + fmtK(eqDelta) + '</span>';
+    h += '<div class="metric-row"><span class="label">Net Liquidation Value</span><span class="value">' + fmtK(acct.netLiquidation);
+    if (nlvDelta !== 0) h += '<span class="metric-delta ' + (nlvDelta > 0 ? 'up' : 'dn') + '">' + (nlvDelta > 0 ? '+' : '') + fmtK(nlvDelta) + '</span>';
     h += '</span></div>';
 
-    var totalExposure = 0;
-    acct.positions.forEach(function(p) { totalExposure += p.notional; });
-    h += '<div class="metric-row"><span class="label">Exposure</span><span class="value">' + fmtK(totalExposure) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Total Exposure</span><span class="value">' + fmtK(acct.totalExposure) + '</span></div>';
 
     h += '<div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">' + fmtK(acct.totalIMR);
     if (imrDelta !== 0) h += '<span class="metric-delta ' + (imrDelta > 0 ? 'dn' : 'up') + '">' + (imrDelta > 0 ? '+' : '') + fmtK(imrDelta) + '</span>';
     h += '</span></div>';
 
-    h += '<div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">' + fmtK(acct.totalMMR);
-    if (mmrDelta !== 0) h += '<span class="metric-delta dn">+' + fmtK(mmrDelta) + '</span>';
-    h += '</span></div>';
+    h += '<div class="metric-row"><span class="label">Loan Financed</span><span class="value">' + fmtK(loanFinanced(acct)) + '</span></div>';
 
-    h += '<div class="metric-row"><span class="label">Remaining Margin</span><span class="value ' + (rm > 0 ? 'green' : 'red') + '">' + fmtK(rm) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Unallocated Cash</span><span class="value ' + (uc > 0 ? 'green' : 'red') + '">' + fmtK(uc) + '</span></div>';
 
     if (acct.unrealizedPnl !== 0) {
       h += '<div class="metric-row"><span class="label">Unrealized P&L</span><span class="value ' + (acct.unrealizedPnl > 0 ? 'green' : 'red') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
     }
 
-    // Margin Health Ratio bar (BRD formula)
     h += '<div class="health-bar-container">';
-    h += '<div class="health-bar-label"><span class="label">Margin Health Ratio</span><span class="value">' + fmtRatio(hr) + '</span></div>';
+    h += '<div class="health-bar-label"><span class="label">Margin Utilization</span><span class="value">' + util.toFixed(1) + '%</span></div>';
     h += '<div class="health-bar"><div class="fill ' + band.color + '" style="width:' + band.pct + '%"></div></div>';
     h += '<div class="health-badge ' + band.cls + '">' + band.label + '</div>';
     h += '</div>';
 
     h += '</div>';
 
-    // Position cards
     if (acct.positions.length > 0) {
       h += '<div class="positions-label">Open Positions</div>';
       acct.positions.forEach(function(p) {
@@ -1131,7 +1117,7 @@
         if (p.type === 'real') h += '<span class="collateral-badge">Collateral</span>';
         h += '</div>';
         h += '<div class="name">' + (p.side === 'buy' ? 'Long' : 'Short') + ' &middot; ' + a.nm + '</div>';
-        h += '<div class="margin-info">Notional: ' + fmtK(p.notional) + (p.imr > 0 ? ' &middot; IMR: ' + fmtK(p.imr) : '') + (p.mmr > 0 ? ' &middot; MMR: ' + fmtK(p.mmr) : '') + '</div>';
+        h += '<div class="margin-info">Notional: ' + fmtK(p.notional) + (p.imr > 0 ? ' &middot; IMR: ' + fmtK(p.imr) : '') + '</div>';
         h += '</div></div>';
         h += '<div class="position-right">';
         if (p.pnl !== 0) {
@@ -1146,7 +1132,7 @@
 
     var hasReal = acct.positions.some(function(p) { return p.type === 'real'; });
     if (hasReal) {
-      h += '<div class="collateral-callout"><div class="cc-icon">&#9989;</div><div class="cc-text">Real stock holdings have IMR equal to their full notional value (x1 leverage). They count toward Total IMR per BRD formula.</div></div>';
+      h += '<div class="collateral-callout"><div class="cc-icon">&#9989;</div><div class="cc-text">Real stock holdings have IMR equal to their full notional value (x1 leverage). They count toward Total IMR.</div></div>';
     }
 
     h += '<div class="spacer"></div></div>';
@@ -1158,11 +1144,10 @@
     var isNoMargin = !!step.noMarginDefault;
     var lev = isNoMargin ? 1 : asset.lev;
     var imr = step.notional / lev;
-    var mmr = step.notional * MMR_RATE;
     var prevSnaps = getSnaps();
     var prevAcct = state.step > 0 ? prevSnaps[state.step - 1] : acct;
-    var prevRm = remainingMargin(prevAcct);
-    var projectedRm = prevRm - imr;
+    var prevUc = unallocatedCash(prevAcct);
+    var projectedUc = prevUc - imr;
 
     var h = '<div class="trade-section' + (step.side === 'short' ? ' short-border' : '') + '">';
     h += '<div class="trade-label">' + (step.side === 'buy' ? 'Buy' : 'Short') + ' Order</div>';
@@ -1192,11 +1177,8 @@
     }
     h += '<div class="divider"></div>';
     h += '<div class="detail-row"><span class="label">Initial Margin Requirement</span><span class="value">' + (isNoMargin ? fmtK(imr) + ' (fully paid)' : fmtK(imr)) + '</span></div>';
-    if (!isNoMargin) {
-      h += '<div class="detail-row"><span class="label">Maintenance Margin Req.</span><span class="value">' + fmtK(mmr) + '</span></div>';
-    }
-    h += '<div class="detail-row"><span class="label">Available Margin</span><span class="value green">' + fmtK(prevRm) + '</span></div>';
-    h += '<div class="detail-row"><span class="label">Projected Remaining</span><span class="value ' + (projectedRm >= 0 ? 'green' : 'red') + '">' + fmtK(projectedRm) + '</span></div>';
+    h += '<div class="detail-row"><span class="label">Unallocated Cash</span><span class="value green">' + fmtK(prevUc) + '</span></div>';
+    h += '<div class="detail-row"><span class="label">Projected Unallocated Cash</span><span class="value ' + (projectedUc >= 0 ? 'green' : 'red') + '">' + fmtK(projectedUc) + '</span></div>';
 
     h += '<div class="disclosure">All trades execute within your Margin Account. Leverage is determined by platform rules (BRD Section 2.2).</div>';
     h += '</div>';
@@ -1207,18 +1189,18 @@
     var h = '<div class="market-sim-card" style="margin:12px 24px;">';
     h += '<div class="ms-title">&#128200; Market Movement</div>';
     h += '<div class="ms-anim"><span class="pulse">' + step.label + '</span></div>';
-    h += '<div class="ms-row"><span class="ms-label">Impact on Equity</span><span class="ms-val ' + (acct.unrealizedPnl > 0 ? 'positive' : 'negative') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
-    h += '<div class="ms-row"><span class="ms-label">New Equity</span><span class="ms-val">' + fmtK(acct.equity) + '</span></div>';
-    h += '<div class="ms-row"><span class="ms-label">Remaining Margin Change</span><span class="ms-val ' + (acct.unrealizedPnl > 0 ? 'positive' : 'negative') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
+    h += '<div class="ms-row"><span class="ms-label">Impact on Net Liquidation</span><span class="ms-val ' + (acct.unrealizedPnl > 0 ? 'positive' : 'negative') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
+    h += '<div class="ms-row"><span class="ms-label">New Net Liquidation Value</span><span class="ms-val">' + fmtK(acct.netLiquidation) + '</span></div>';
+    h += '<div class="ms-row"><span class="ms-label">Unallocated Cash Change</span><span class="ms-val ' + (acct.unrealizedPnl > 0 ? 'positive' : 'negative') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
     h += '</div>';
     return h;
   }
 
   function renderWarning(acct) {
-    var hr = marginHealthRatio(acct);
+    var util = marginUtilization(acct);
     var h = '<div class="notif-card yellow-card">';
     h += '<div class="notif-title">&#9888;&#65039; Margin Warning</div>';
-    h += '<div class="notif-text">Your Margin Health Ratio has dropped to <strong>' + fmtRatio(hr) + '</strong>. Consider reducing positions or adding funds. Liquidation triggers at 100%.</div>';
+    h += '<div class="notif-text">Your Margin Utilization has reached <strong>' + util.toFixed(1) + '%</strong>. Consider reducing positions or adding funds.</div>';
     h += '</div>';
     h += '<div class="notif-card orange-card">';
     h += '<div class="notif-title">Recommended Actions</div>';
@@ -1238,41 +1220,40 @@
     h += '<div class="nb-row"><span class="nl">Gross Initial Margin (Long + Short)</span><span class="nv">' + fmtK(grossIMR) + '</span></div>';
     h += '<div class="nb-row"><span class="nl">Net Initial Margin (after 50% offset)</span><span class="nv">' + fmtK(netIMR) + '</span></div>';
     h += '<div class="nb-row"><span class="nl">Margin Saved</span><span class="nv" style="color:#2e7d32">' + fmtK(saved) + '</span></div>';
-    h += '<div style="margin-top:10px;font-size:12px;color:#6b7280;line-height:1.4">Opposing positions on the same asset reduce net risk exposure, allowing the system to release margin back to your Remaining Margin.</div>';
+    h += '<div style="margin-top:10px;font-size:12px;color:#6b7280;line-height:1.4">Opposing positions on the same asset reduce net risk exposure, allowing the system to release margin back to your Unallocated Cash.</div>';
     h += '</div>';
     return h;
   }
 
   function renderSummary(acct) {
-    var firstSnap = getSnaps()[0];
-    var startRm = remainingMargin(firstSnap);
-    var endRm = remainingMargin(acct);
-    var hr = marginHealthRatio(acct);
+    var endUc = unallocatedCash(acct);
+    var util = marginUtilization(acct);
 
     var h = '<div class="summary-badge">';
     h += '<div class="sb-title">Scenario Complete</div>';
-    h += '<div class="sb-val">' + fmtK(endRm) + '</div>';
-    h += '<div class="sb-sub">Remaining Margin</div>';
+    h += '<div class="sb-val">' + fmtK(acct.netLiquidation) + '</div>';
+    h += '<div class="sb-sub">Net Liquidation Value</div>';
     h += '</div>';
 
     h += '<div class="margin-overview" style="margin:12px 24px;">';
     h += '<div class="section-title">Journey Summary</div>';
     h += '<div class="metric-row"><span class="label">Starting Deposit</span><span class="value">' + fmtK(acct.deposit) + '</span></div>';
     h += '<div class="metric-row"><span class="label">Positions Opened</span><span class="value">' + acct.positions.length + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Total Exposure</span><span class="value">' + fmtK(acct.totalExposure) + '</span></div>';
     h += '<div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">' + fmtK(acct.totalIMR) + '</span></div>';
-    h += '<div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">' + fmtK(acct.totalMMR) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Loan Financed</span><span class="value">' + fmtK(loanFinanced(acct)) + '</span></div>';
     if (acct.unrealizedPnl !== 0) {
       h += '<div class="metric-row"><span class="label">Unrealized P&L</span><span class="value ' + (acct.unrealizedPnl > 0 ? 'green' : 'red') + '">' + (acct.unrealizedPnl > 0 ? '+' : '') + fmtK(acct.unrealizedPnl) + '</span></div>';
     }
-    h += '<div class="metric-row"><span class="label">Margin Health Ratio</span><span class="value">' + fmtRatio(hr) + '</span></div>';
-    h += '<div class="metric-row"><span class="label">Final Remaining Margin</span><span class="value green">' + fmtK(endRm) + '</span></div>';
+    h += '<div class="metric-row"><span class="label">Margin Utilization</span><span class="value">' + util.toFixed(1) + '%</span></div>';
+    h += '<div class="metric-row"><span class="label">Unallocated Cash</span><span class="value green">' + fmtK(endUc) + '</span></div>';
     h += '</div>';
 
     if (state.scenario === 1) {
-      h += '<div class="collateral-callout"><div class="cc-icon">&#128161;</div><div class="cc-text"><strong>Key Insight:</strong> Unrealized profits on CFD positions increase your Equity, which expands Remaining Margin (BRD: Remaining Margin = Equity - Total IMR) — allowing additional positions without depositing more funds.</div></div>';
+      h += '<div class="collateral-callout"><div class="cc-icon">&#128161;</div><div class="cc-text"><strong>Key Insight:</strong> Unrealized profits on CFD positions increase your Net Liquidation Value, which expands Unallocated Cash (NLV - Total IMR) — allowing additional positions without depositing more funds.</div></div>';
     }
     if (state.scenario === 3) {
-      h += '<div class="collateral-callout"><div class="cc-icon">&#128737;</div><div class="cc-text"><strong>Key Insight:</strong> Hedging with opposing positions on the same asset triggers risk netting, reducing effective margin requirements and freeing Remaining Margin (Buying Power).</div></div>';
+      h += '<div class="collateral-callout"><div class="cc-icon">&#128737;</div><div class="cc-text"><strong>Key Insight:</strong> Hedging with opposing positions on the same asset triggers risk netting, reducing effective margin requirements and freeing Unallocated Cash (Buying Power).</div></div>';
     }
 
     return h;
