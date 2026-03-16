@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buying Power — eToro</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #e8ecf1;
+  color: #1a1a2e;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 20px;
+  max-width: 700px;
+  width: 100%;
+}
+.page-header h1 { font-size: 24px; font-weight: 700; color: #0b1828; margin-bottom: 6px; }
+.page-header .subtitle { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+
+.view-tabs {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.v-tab {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid #d1d5db;
+  color: #6b7280;
+  background: #fff;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.v-tab.active { background: #0b1828; color: #fff; border-color: #0b1828; }
+.v-tab:hover:not(.active) { border-color: #9ca3af; }
+
+.phone {
+  width: 390px;
+  min-height: 780px;
+  max-height: 844px;
+  background: #fff;
+  border-radius: 40px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  position: relative;
+  user-select: none;
+}
+.phone-inner {
+  width: 100%;
+  height: 844px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.status-bar {
+  background: #0b1828;
+  height: 54px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 28px 8px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.status-bar .time { font-size: 16px; }
+.status-bar .icons { display: flex; gap: 6px; font-size: 12px; }
+.status-bar .icons span { opacity: 0.9; }
+
+.header {
+  background: #0b1828;
+  padding: 14px 24px 18px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.header .title { font-size: 17px; font-weight: 700; }
+.header .desc { font-size: 12px; opacity: 0.55; margin-top: 3px; }
+
+.bp-hero {
+  background: linear-gradient(135deg, #0b1828 0%, #1a2d4a 100%);
+  padding: 28px 24px 22px;
+  color: #fff;
+  text-align: center;
+  flex-shrink: 0;
+}
+.bp-hero .lbl {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  opacity: 0.5;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.bp-hero .big {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.bp-hero .big.green { color: #00e676; }
+.bp-hero .sub-line {
+  font-size: 12px;
+  opacity: 0.5;
+  margin-top: 4px;
+}
+
+.portfolio-bg {
+  background: #f5f7fa;
+  padding: 0 0 24px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.card .section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6b7280;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 14px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-row .label {
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.metric-row .value { font-weight: 600; }
+.metric-row .value.green { color: #00c853; }
+.metric-row .value.red { color: #f44336; }
+.metric-row .value.highlight { color: #0b1828; font-size: 16px; font-weight: 800; }
+
+.tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+}
+.tooltip-icon:hover { background: #d1d5db; color: #6b7280; }
+.tooltip-icon .tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 400;
+  white-space: normal;
+  width: 200px;
+  line-height: 1.4;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  text-align: left;
+}
+.tooltip-icon .tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1a1a2e;
+}
+.tooltip-icon:hover .tip { display: block; }
+
+.health-bar-container {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+.health-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.health-bar-label .label { color: #6b7280; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+.health-bar-label .value { font-weight: 700; }
+.health-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.health-bar .fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.health-bar .fill.green { background: linear-gradient(90deg, #00c853, #69f0ae); }
+.health-bar .fill.yellow { background: linear-gradient(90deg, #ff9800, #ffcc02); }
+.health-bar .fill.red { background: linear-gradient(90deg, #f44336, #ff7043); }
+.health-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.health-badge.safe { background: #e8f5e9; color: #2e7d32; }
+.health-badge.warning { background: #fff3e0; color: #e65100; }
+
+/* Buying Power by Asset Type table */
+.asset-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.asset-table thead th {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  padding: 0 0 12px;
+  text-align: right;
+  border-bottom: 1px solid #f0f0f0;
+}
+.asset-table thead th:first-child { text-align: left; }
+.asset-table tbody td {
+  padding: 12px 0;
+  font-size: 14px;
+  text-align: right;
+  border-bottom: 1px solid #f5f5f5;
+}
+.asset-table tbody td:first-child { text-align: left; }
+.asset-table tbody tr:last-child td { border-bottom: none; }
+.asset-table .cat-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.cat-icon.stocks { background: #e3f2fd; }
+.cat-icon.crypto { background: #fff3e0; }
+.cat-icon.indices { background: #ede7f6; }
+.cat-icon.commodities { background: #fce4ec; }
+.cat-icon.etfs { background: #e0f2f1; }
+.cat-name { font-weight: 600; color: #1a1a2e; }
+.lev-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.bp-val { font-weight: 700; color: #0b1828; }
+
+/* Exposure by Asset Category */
+.exp-category {
+  border-bottom: 1px solid #f5f5f5;
+}
+.exp-category:last-child { border-bottom: none; }
+.exp-cat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.exp-cat-header:hover { background: #fafbfc; margin: 0 -20px; padding: 14px 20px; border-radius: 8px; }
+.exp-cat-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.exp-cat-name { font-weight: 600; font-size: 14px; }
+.exp-cat-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.exp-cat-val { font-weight: 700; font-size: 14px; }
+.chevron {
+  font-size: 10px;
+  color: #9ca3af;
+  transition: transform 0.2s;
+  width: 16px;
+  text-align: center;
+}
+.chevron.open { transform: rotate(90deg); }
+
+.exp-items {
+  display: none;
+  padding: 0 0 8px 42px;
+}
+.exp-items.show { display: block; }
+.exp-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 13px;
+  border-bottom: 1px dashed #f0f0f0;
+}
+.exp-item:last-child { border-bottom: none; }
+.exp-item .item-name { color: #6b7280; }
+.exp-item .item-val { font-weight: 600; }
+
+.exp-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 0;
+  margin-top: 4px;
+  border-top: 2px solid #e5e7eb;
+  font-size: 15px;
+}
+.exp-total .label { font-weight: 700; color: #1a1a2e; }
+.exp-total .value { font-weight: 800; color: #0b1828; font-size: 16px; }
+
+/* Loading & error states */
+.loading-state {
+  display: none;
+  padding: 60px 24px;
+  text-align: center;
+}
+.loading-state.show { display: block; }
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #0b1828;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: #6b7280; }
+
+.error-state {
+  display: none;
+  padding: 48px 24px;
+  text-align: center;
+}
+.error-state.show { display: block; }
+.error-icon { font-size: 40px; margin-bottom: 12px; }
+.error-title { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+.error-msg { font-size: 13px; color: #6b7280; margin-bottom: 20px; line-height: 1.4; }
+.retry-btn {
+  padding: 10px 28px;
+  border: none;
+  border-radius: 24px;
+  background: #0b1828;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.retry-btn:active { transform: scale(0.97); }
+
+.spacer { height: 16px; flex-shrink: 0; }
+
+.interaction-hint {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  max-width: 390px;
+}
+.interaction-hint strong { color: #1a1a2e; }
+
+/* Desktop view */
+.desktop-frame {
+  display: none;
+  width: 100%;
+  max-width: 900px;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+}
+.desktop-frame .desktop-inner {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.desktop-frame .summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px 0 0;
+}
+.desktop-frame .summary-card-item {
+  background: #f5f7fa;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+.desktop-frame .summary-card-item .sc-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.desktop-frame .summary-card-item .sc-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0b1828;
+}
+.desktop-frame .summary-card-item .sc-value.green { color: #00c853; }
+.desktop-frame .summary-card-item .sc-value.red { color: #f44336; }
+.desktop-frame .two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.desktop-frame .two-col > .card { margin: 16px 12px; }
+.desktop-frame .two-col > .card:first-child { margin-left: 24px; }
+.desktop-frame .two-col > .card:last-child { margin-right: 24px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Buying Power Screen — UX Mockup</h1>
+  <p class="subtitle">Based on Feature Spec: FR-001 through FR-011. Tap tabs to switch between mobile and desktop views.</p>
+</div>
+
+<div class="view-tabs">
+  <div class="v-tab active" data-view="mobile">Mobile</div>
+  <div class="v-tab" data-view="desktop">Desktop</div>
+  <div class="v-tab" data-view="loading">Loading State</div>
+  <div class="v-tab" data-view="error">Error State</div>
+  <div class="v-tab" data-view="zero">All-Zero Portfolio</div>
+</div>
+
+<!-- ==================== MOBILE VIEW ==================== -->
+<div class="phone" id="mobileView">
+  <div class="phone-inner" id="phoneInner">
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="time">9:41</div>
+      <div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="title">Buying Power</div>
+      <div class="desc">Overview of your account balance, margin usage, and available buying power.</div>
+    </div>
+
+    <!-- Hero -->
+    <div class="bp-hero" data-testid="bp-hero">
+      <div class="lbl">Net Liquidation Value</div>
+      <div class="big green" data-testid="net-liquidation">$127,450.00</div>
+      <div class="sub-line">Total equity across all positions</div>
+    </div>
+
+    <!-- Content -->
+    <div class="portfolio-bg">
+
+      <!-- Account Summary (FR-002) -->
+      <div class="card" data-testid="account-summary">
+        <div class="section-title">
+          Account Summary
+          <span class="tooltip-icon">?<span class="tip">A snapshot of your account's key financial metrics including cash, margin, and equity.</span></span>
+        </div>
+        <div class="metric-row">
+          <div class="label">Initial Margin Used <span class="tooltip-icon">?<span class="tip">The amount of your equity locked as collateral for open leveraged positions.</span></span></div>
+          <div class="value">$42,500.00</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Unrealized P/L <span class="tooltip-icon">?<span class="tip">The profit or loss on your currently open positions, calculated at current market prices.</span></span></div>
+          <div class="value green">+$7,450.00</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Unallocated Cash <span class="tooltip-icon">?<span class="tip">Cash available in your account not currently used as margin for any position.</span></span></div>
+          <div class="value highlight" data-testid="unallocated-cash">$84,950.00</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Net Liquidation Value <span class="tooltip-icon">?<span class="tip">Your total equity: cash balance plus unrealized P/L on all positions. This is what your account is worth if all positions were closed now.</span></span></div>
+          <div class="value highlight" data-testid="total-equity">$127,450.00</div>
+        </div>
+      </div>
+
+      <!-- Exposure Section (FR-003) -->
+      <div class="card" data-testid="exposure-summary">
+        <div class="section-title">
+          Exposure &amp; Margin Utilization
+          <span class="tooltip-icon">?<span class="tip">Shows your total market exposure, how much is financed, and how much of your margin capacity is in use.</span></span>
+        </div>
+        <div class="metric-row">
+          <div class="label">Total Exposure <span class="tooltip-icon">?<span class="tip">The total notional value of all your open positions, including the leveraged portion.</span></span></div>
+          <div class="value">$215,000.00</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Initial Margin <span class="tooltip-icon">?<span class="tip">Your equity set aside as collateral for leveraged positions.</span></span></div>
+          <div class="value">$42,500.00</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Unrealized P/L</div>
+          <div class="value green">+$7,450.00</div>
+        </div>
+        <div class="metric-row">
+          <div class="label">Loan Financed <span class="tooltip-icon">?<span class="tip">The portion of your exposure financed by the broker (Total Exposure minus your equity contribution). Higher leverage means more loan financing.</span></span></div>
+          <div class="value">$172,500.00</div>
+        </div>
+
+        <!-- Margin Utilization (FR-003) -->
+        <div class="health-bar-container" data-testid="margin-utilization">
+          <div class="health-bar-label">
+            <div class="label">Margin Utilization <span class="tooltip-icon">?<span class="tip">The percentage of your available margin currently in use. Lower is safer — approaching 100% may trigger margin calls.</span></span></div>
+            <div class="value">33.3%</div>
+          </div>
+          <div class="health-bar">
+            <div class="fill green" style="width: 33.3%"></div>
+          </div>
+          <span class="health-badge safe">Healthy</span>
+        </div>
+      </div>
+
+      <!-- Buying Power by Asset Type (FR-004) -->
+      <div class="card" data-testid="buying-power-by-asset">
+        <div class="section-title">
+          Buying Power by Asset Type
+          <span class="tooltip-icon">?<span class="tip">Shows how much you can invest in each asset category based on your unallocated cash and the maximum leverage available.</span></span>
+        </div>
+        <table class="asset-table">
+          <thead>
+            <tr>
+              <th>Asset Category</th>
+              <th>Max Leverage</th>
+              <th>Unallocated</th>
+              <th>Buying Power</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="cat-cell"><div class="cat-icon stocks">&#128200;</div><span class="cat-name">Stocks</span></div></td>
+              <td><span class="lev-badge">x5</span></td>
+              <td>$84,950</td>
+              <td class="bp-val">$424,750</td>
+            </tr>
+            <tr>
+              <td><div class="cat-cell"><div class="cat-icon crypto">&#9878;</div><span class="cat-name">Crypto</span></div></td>
+              <td><span class="lev-badge">x2</span></td>
+              <td>$84,950</td>
+              <td class="bp-val">$169,900</td>
+            </tr>
+            <tr>
+              <td><div class="cat-cell"><div class="cat-icon indices">&#127760;</div><span class="cat-name">Indices</span></div></td>
+              <td><span class="lev-badge">x20</span></td>
+              <td>$84,950</td>
+              <td class="bp-val">$1,699,000</td>
+            </tr>
+            <tr>
+              <td><div class="cat-cell"><div class="cat-icon commodities">&#9878;</div><span class="cat-name">Commodities</span></div></td>
+              <td><span class="lev-badge">x10</span></td>
+              <td>$84,950</td>
+              <td class="bp-val">$849,500</td>
+            </tr>
+            <tr>
+              <td><div class="cat-cell"><div class="cat-icon etfs">&#128202;</div><span class="cat-name">ETFs</span></div></td>
+              <td><span class="lev-badge">x5</span></td>
+              <td>$84,950</td>
+              <td class="bp-val">$424,750</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Exposure by Asset Category (FR-005, FR-006) -->
+      <div class="card" data-testid="exposure-by-category">
+        <div class="section-title">
+          Exposure by Asset Category
+          <span class="tooltip-icon">?<span class="tip">Breakdown of your total exposure by asset class. Expand each category to see individual positions.</span></span>
+        </div>
+
+        <div class="exp-category" data-cat="stocks">
+          <div class="exp-cat-header" onclick="toggleCategory('stocks')">
+            <div class="exp-cat-left">
+              <div class="cat-icon stocks">&#128200;</div>
+              <span class="exp-cat-name">Stocks</span>
+            </div>
+            <div class="exp-cat-right">
+              <span class="exp-cat-val">$95,000.00</span>
+              <span class="chevron" id="chev-stocks">&#9654;</span>
+            </div>
+          </div>
+          <div class="exp-items" id="items-stocks">
+            <div class="exp-item"><span class="item-name">TSLA — Tesla Inc</span><span class="item-val">$35,000.00</span></div>
+            <div class="exp-item"><span class="item-name">AAPL — Apple Inc</span><span class="item-val">$25,000.00</span></div>
+            <div class="exp-item"><span class="item-name">LCID — Lucid Group</span><span class="item-val">$15,000.00</span></div>
+            <div class="exp-item"><span class="item-name">NVDA — Nvidia Corp</span><span class="item-val">$20,000.00</span></div>
+          </div>
+        </div>
+
+        <div class="exp-category" data-cat="indices">
+          <div class="exp-cat-header" onclick="toggleCategory('indices')">
+            <div class="exp-cat-left">
+              <div class="cat-icon indices">&#127760;</div>
+              <span class="exp-cat-name">Indices</span>
+            </div>
+            <div class="exp-cat-right">
+              <span class="exp-cat-val">$80,000.00</span>
+              <span class="chevron" id="chev-indices">&#9654;</span>
+            </div>
+          </div>
+          <div class="exp-items" id="items-indices">
+            <div class="exp-item"><span class="item-name">NDX — Nasdaq 100</span><span class="item-val">$50,000.00</span></div>
+            <div class="exp-item"><span class="item-name">SPX500 — S&P 500</span><span class="item-val">$30,000.00</span></div>
+          </div>
+        </div>
+
+        <div class="exp-category" data-cat="commodities">
+          <div class="exp-cat-header" onclick="toggleCategory('commodities')">
+            <div class="exp-cat-left">
+              <div class="cat-icon commodities">&#9878;</div>
+              <span class="exp-cat-name">Commodities</span>
+            </div>
+            <div class="exp-cat-right">
+              <span class="exp-cat-val">$20,000.00</span>
+              <span class="chevron" id="chev-commodities">&#9654;</span>
+            </div>
+          </div>
+          <div class="exp-items" id="items-commodities">
+            <div class="exp-item"><span class="item-name">OIL — Crude Oil WTI</span><span class="item-val">$20,000.00</span></div>
+          </div>
+        </div>
+
+        <div class="exp-category" data-cat="crypto">
+          <div class="exp-cat-header" onclick="toggleCategory('crypto')">
+            <div class="exp-cat-left">
+              <div class="cat-icon crypto">&#9878;</div>
+              <span class="exp-cat-name">Crypto</span>
+            </div>
+            <div class="exp-cat-right">
+              <span class="exp-cat-val">$20,000.00</span>
+              <span class="chevron" id="chev-crypto">&#9654;</span>
+            </div>
+          </div>
+          <div class="exp-items" id="items-crypto">
+            <div class="exp-item"><span class="item-name">BTC — Bitcoin</span><span class="item-val">$12,000.00</span></div>
+            <div class="exp-item"><span class="item-name">ETH — Ethereum</span><span class="item-val">$8,000.00</span></div>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="exp-total" data-testid="total-exposure">
+          <span class="label">Total USD Exposure</span>
+          <span class="value">$215,000.00</span>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DESKTOP VIEW ==================== -->
+<div class="desktop-frame" id="desktopView">
+  <div class="desktop-inner">
+    <div class="header">
+      <div class="title">Buying Power</div>
+      <div class="desc">Overview of your account balance, margin usage, and available buying power.</div>
+    </div>
+
+    <div class="bp-hero">
+      <div class="lbl">Net Liquidation Value</div>
+      <div class="big green">$127,450.00</div>
+      <div class="sub-line">Total equity across all positions</div>
+    </div>
+
+    <div class="portfolio-bg">
+      <!-- Summary cards in a grid -->
+      <div class="card" style="margin: 16px 24px;">
+        <div class="section-title">Account Summary</div>
+        <div class="summary-grid">
+          <div class="summary-card-item">
+            <div class="sc-label">Initial Margin Used</div>
+            <div class="sc-value">$42,500.00</div>
+          </div>
+          <div class="summary-card-item">
+            <div class="sc-label">Unrealized P/L</div>
+            <div class="sc-value green">+$7,450.00</div>
+          </div>
+          <div class="summary-card-item">
+            <div class="sc-label">Unallocated Cash</div>
+            <div class="sc-value">$84,950.00</div>
+          </div>
+          <div class="summary-card-item">
+            <div class="sc-label">Net Liquidation</div>
+            <div class="sc-value">$127,450.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-column layout for desktop -->
+      <div class="two-col">
+        <!-- Exposure -->
+        <div class="card">
+          <div class="section-title">Exposure &amp; Margin</div>
+          <div class="metric-row"><div class="label">Total Exposure</div><div class="value">$215,000.00</div></div>
+          <div class="metric-row"><div class="label">Initial Margin</div><div class="value">$42,500.00</div></div>
+          <div class="metric-row"><div class="label">Unrealized P/L</div><div class="value green">+$7,450.00</div></div>
+          <div class="metric-row"><div class="label">Loan Financed</div><div class="value">$172,500.00</div></div>
+          <div class="health-bar-container">
+            <div class="health-bar-label">
+              <div class="label">Margin Utilization</div>
+              <div class="value">33.3%</div>
+            </div>
+            <div class="health-bar"><div class="fill green" style="width: 33.3%"></div></div>
+            <span class="health-badge safe">Healthy</span>
+          </div>
+        </div>
+
+        <!-- Buying Power by Asset -->
+        <div class="card">
+          <div class="section-title">Buying Power by Asset Type</div>
+          <table class="asset-table">
+            <thead><tr><th>Category</th><th>Leverage</th><th>Cash</th><th>Buying Power</th></tr></thead>
+            <tbody>
+              <tr><td><div class="cat-cell"><div class="cat-icon stocks">&#128200;</div><span class="cat-name">Stocks</span></div></td><td><span class="lev-badge">x5</span></td><td>$84,950</td><td class="bp-val">$424,750</td></tr>
+              <tr><td><div class="cat-cell"><div class="cat-icon crypto">&#9878;</div><span class="cat-name">Crypto</span></div></td><td><span class="lev-badge">x2</span></td><td>$84,950</td><td class="bp-val">$169,900</td></tr>
+              <tr><td><div class="cat-cell"><div class="cat-icon indices">&#127760;</div><span class="cat-name">Indices</span></div></td><td><span class="lev-badge">x20</span></td><td>$84,950</td><td class="bp-val">$1,699,000</td></tr>
+              <tr><td><div class="cat-cell"><div class="cat-icon commodities">&#9878;</div><span class="cat-name">Commodities</span></div></td><td><span class="lev-badge">x10</span></td><td>$84,950</td><td class="bp-val">$849,500</td></tr>
+              <tr><td><div class="cat-cell"><div class="cat-icon etfs">&#128202;</div><span class="cat-name">ETFs</span></div></td><td><span class="lev-badge">x5</span></td><td>$84,950</td><td class="bp-val">$424,750</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Exposure by Category (full width) -->
+      <div class="card" style="margin: 0 24px 24px;">
+        <div class="section-title">Exposure by Asset Category</div>
+        <div class="exp-category" data-cat="d-stocks">
+          <div class="exp-cat-header" onclick="toggleCategory('d-stocks')">
+            <div class="exp-cat-left"><div class="cat-icon stocks">&#128200;</div><span class="exp-cat-name">Stocks</span></div>
+            <div class="exp-cat-right"><span class="exp-cat-val">$95,000.00</span><span class="chevron" id="chev-d-stocks">&#9654;</span></div>
+          </div>
+          <div class="exp-items" id="items-d-stocks">
+            <div class="exp-item"><span class="item-name">TSLA — Tesla Inc</span><span class="item-val">$35,000.00</span></div>
+            <div class="exp-item"><span class="item-name">AAPL — Apple Inc</span><span class="item-val">$25,000.00</span></div>
+            <div class="exp-item"><span class="item-name">LCID — Lucid Group</span><span class="item-val">$15,000.00</span></div>
+            <div class="exp-item"><span class="item-name">NVDA — Nvidia Corp</span><span class="item-val">$20,000.00</span></div>
+          </div>
+        </div>
+        <div class="exp-category" data-cat="d-indices">
+          <div class="exp-cat-header" onclick="toggleCategory('d-indices')">
+            <div class="exp-cat-left"><div class="cat-icon indices">&#127760;</div><span class="exp-cat-name">Indices</span></div>
+            <div class="exp-cat-right"><span class="exp-cat-val">$80,000.00</span><span class="chevron" id="chev-d-indices">&#9654;</span></div>
+          </div>
+          <div class="exp-items" id="items-d-indices">
+            <div class="exp-item"><span class="item-name">NDX — Nasdaq 100</span><span class="item-val">$50,000.00</span></div>
+            <div class="exp-item"><span class="item-name">SPX500 — S&P 500</span><span class="item-val">$30,000.00</span></div>
+          </div>
+        </div>
+        <div class="exp-category" data-cat="d-commodities">
+          <div class="exp-cat-header" onclick="toggleCategory('d-commodities')">
+            <div class="exp-cat-left"><div class="cat-icon commodities">&#9878;</div><span class="exp-cat-name">Commodities</span></div>
+            <div class="exp-cat-right"><span class="exp-cat-val">$20,000.00</span><span class="chevron" id="chev-d-commodities">&#9654;</span></div>
+          </div>
+          <div class="exp-items" id="items-d-commodities">
+            <div class="exp-item"><span class="item-name">OIL — Crude Oil WTI</span><span class="item-val">$20,000.00</span></div>
+          </div>
+        </div>
+        <div class="exp-category" data-cat="d-crypto">
+          <div class="exp-cat-header" onclick="toggleCategory('d-crypto')">
+            <div class="exp-cat-left"><div class="cat-icon crypto">&#9878;</div><span class="exp-cat-name">Crypto</span></div>
+            <div class="exp-cat-right"><span class="exp-cat-val">$20,000.00</span><span class="chevron" id="chev-d-crypto">&#9654;</span></div>
+          </div>
+          <div class="exp-items" id="items-d-crypto">
+            <div class="exp-item"><span class="item-name">BTC — Bitcoin</span><span class="item-val">$12,000.00</span></div>
+            <div class="exp-item"><span class="item-name">ETH — Ethereum</span><span class="item-val">$8,000.00</span></div>
+          </div>
+        </div>
+        <div class="exp-total"><span class="label">Total USD Exposure</span><span class="value">$215,000.00</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LOADING STATE ==================== -->
+<div class="phone" id="loadingView" style="display:none;">
+  <div class="phone-inner">
+    <div class="status-bar"><div class="time">9:41</div><div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div></div>
+    <div class="header"><div class="title">Buying Power</div><div class="desc">Overview of your account balance, margin usage, and available buying power.</div></div>
+    <div class="bp-hero">
+      <div class="lbl">Net Liquidation Value</div>
+      <div class="big" style="color: rgba(255,255,255,0.3);">—</div>
+    </div>
+    <div class="portfolio-bg" style="min-height:400px;">
+      <div class="loading-state show">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading your account data...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ERROR STATE ==================== -->
+<div class="phone" id="errorView" style="display:none;">
+  <div class="phone-inner">
+    <div class="status-bar"><div class="time">9:41</div><div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div></div>
+    <div class="header"><div class="title">Buying Power</div><div class="desc">Overview of your account balance, margin usage, and available buying power.</div></div>
+    <div class="bp-hero">
+      <div class="lbl">Net Liquidation Value</div>
+      <div class="big" style="color: rgba(255,255,255,0.3);">—</div>
+    </div>
+    <div class="portfolio-bg" style="min-height:400px;">
+      <div class="error-state show">
+        <div class="error-icon">&#9888;&#65039;</div>
+        <div class="error-title">Unable to Load Data</div>
+        <div class="error-msg">We couldn't retrieve your account information right now. Please check your connection and try again.</div>
+        <button class="retry-btn" onclick="alert('Retry triggered — would re-fetch account data.')">Retry</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ALL-ZERO STATE ==================== -->
+<div class="phone" id="zeroView" style="display:none;">
+  <div class="phone-inner">
+    <div class="status-bar"><div class="time">9:41</div><div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div></div>
+    <div class="header"><div class="title">Buying Power</div><div class="desc">Overview of your account balance, margin usage, and available buying power.</div></div>
+    <div class="bp-hero">
+      <div class="lbl">Net Liquidation Value</div>
+      <div class="big" style="color: rgba(255,255,255,0.5);">$0.00</div>
+      <div class="sub-line">Deposit funds to start trading</div>
+    </div>
+    <div class="portfolio-bg">
+      <div class="card">
+        <div class="section-title">Account Summary</div>
+        <div class="metric-row"><div class="label">Initial Margin Used</div><div class="value">$0.00</div></div>
+        <div class="metric-row"><div class="label">Unrealized P/L</div><div class="value">$0.00</div></div>
+        <div class="metric-row"><div class="label">Unallocated Cash</div><div class="value">$0.00</div></div>
+        <div class="metric-row"><div class="label">Net Liquidation Value</div><div class="value">$0.00</div></div>
+      </div>
+      <div class="card">
+        <div class="section-title">Exposure &amp; Margin Utilization</div>
+        <div class="metric-row"><div class="label">Total Exposure</div><div class="value">$0.00</div></div>
+        <div class="metric-row"><div class="label">Initial Margin</div><div class="value">$0.00</div></div>
+        <div class="metric-row"><div class="label">Unrealized P/L</div><div class="value">$0.00</div></div>
+        <div class="metric-row"><div class="label">Loan Financed</div><div class="value">$0.00</div></div>
+        <div class="health-bar-container">
+          <div class="health-bar-label">
+            <div class="label">Margin Utilization</div>
+            <div class="value">0%</div>
+          </div>
+          <div class="health-bar"><div class="fill green" style="width: 0%"></div></div>
+          <span class="health-badge safe">No Positions</span>
+        </div>
+      </div>
+      <div class="card" style="text-align:center; padding: 32px 20px;">
+        <div style="font-size:40px; margin-bottom:12px;">&#128176;</div>
+        <div style="font-size:16px; font-weight:700; color:#1a1a2e; margin-bottom:6px;">No open positions yet</div>
+        <div style="font-size:13px; color:#6b7280; line-height:1.4;">Deposit funds and open your first position to see buying power and exposure details here.</div>
+      </div>
+      <div class="spacer"></div>
+    </div>
+  </div>
+</div>
+
+<div class="interaction-hint">
+  <strong>Interactive mockup.</strong> Switch views above. Hover info icons for definitions. Expand exposure categories by tapping rows.
+</div>
+
+<script>
+function toggleCategory(cat) {
+  var items = document.getElementById('items-' + cat);
+  var chev = document.getElementById('chev-' + cat);
+  if (!items || !chev) return;
+  var isOpen = items.classList.contains('show');
+  items.classList.toggle('show');
+  chev.classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+  var tab = e.target.closest('[data-view]');
+  if (!tab) return;
+  var view = tab.getAttribute('data-view');
+
+  document.querySelectorAll('.v-tab').forEach(function(t) { t.classList.remove('active'); });
+  tab.classList.add('active');
+
+  document.getElementById('mobileView').style.display = 'none';
+  document.getElementById('desktopView').style.display = 'none';
+  document.getElementById('loadingView').style.display = 'none';
+  document.getElementById('errorView').style.display = 'none';
+  document.getElementById('zeroView').style.display = 'none';
+
+  if (view === 'mobile') document.getElementById('mobileView').style.display = '';
+  else if (view === 'desktop') document.getElementById('desktopView').style.display = '';
+  else if (view === 'loading') document.getElementById('loadingView').style.display = '';
+  else if (view === 'error') document.getElementById('errorView').style.display = '';
+  else if (view === 'zero') document.getElementById('zeroView').style.display = '';
+});
+</script>
+
+</body>
+</html>
