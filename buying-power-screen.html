@@ -66,6 +66,12 @@ body {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
+.phone .card { margin: 12px 16px; padding: 16px; }
+.phone .metric-row { font-size: 13px; padding: 9px 0; }
+.phone .section-title { font-size: 10px; margin-bottom: 12px; }
+.phone .bp-hero .big { font-size: 32px; }
+.phone .header { padding: 12px 20px 14px; }
+.phone .header .desc { font-size: 11px; }
 
 .status-bar {
   background: #0b1828;
@@ -94,7 +100,7 @@ body {
 
 .bp-hero {
   background: linear-gradient(135deg, #0b1828 0%, #1a2d4a 100%);
-  padding: 28px 24px 22px;
+  padding: 24px 20px 20px;
   color: #fff;
   text-align: center;
   flex-shrink: 0;
@@ -157,8 +163,11 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
+  font-size: 13px;
+  flex-shrink: 1;
+  min-width: 0;
 }
-.metric-row .value { font-weight: 600; }
+.metric-row .value { font-weight: 600; flex-shrink: 0; }
 .metric-row .value.green { color: #00c853; }
 .metric-row .value.red { color: #f44336; }
 .metric-row .value.highlight { color: #0b1828; font-size: 16px; font-weight: 800; }
@@ -250,7 +259,34 @@ body {
 .health-badge.safe { background: #e8f5e9; color: #2e7d32; }
 .health-badge.warning { background: #fff3e0; color: #e65100; }
 
-/* Buying Power by Asset Type table */
+/* Buying Power by Asset Type — mobile card list */
+.bp-asset-list { list-style: none; }
+.bp-asset-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+.bp-asset-item:last-child { border-bottom: none; }
+.bp-asset-info { flex: 1; min-width: 0; }
+.bp-asset-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.bp-asset-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #9ca3af;
+}
+.bp-asset-right { text-align: right; flex-shrink: 0; }
+.bp-asset-right .bp-label { font-size: 10px; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.5px; }
+.bp-asset-right .bp-amount { font-size: 16px; font-weight: 800; color: #0b1828; }
+
+/* Buying Power by Asset Type — desktop table */
 .asset-table {
   width: 100%;
   border-collapse: collapse;
@@ -345,6 +381,8 @@ body {
   display: none;
   padding: 0 0 8px 42px;
 }
+.phone .exp-items { padding-left: 32px; }
+.phone .exp-cat-header:hover { margin: 0; padding: 14px 0; background: transparent; }
 .exp-items.show { display: block; }
 .exp-item {
   display: flex;
@@ -428,7 +466,6 @@ body {
 
 /* Desktop view */
 .desktop-frame {
-  display: none;
   width: 100%;
   max-width: 900px;
   background: #fff;
@@ -436,6 +473,7 @@ body {
   overflow: hidden;
   box-shadow: 0 8px 40px rgba(0,0,0,0.12);
 }
+.hidden { display: none !important; }
 .desktop-frame .desktop-inner {
   max-height: 90vh;
   overflow-y: auto;
@@ -577,54 +615,54 @@ body {
         </div>
       </div>
 
-      <!-- Buying Power by Asset Type (FR-004) -->
+      <!-- Buying Power by Asset Type (FR-004) — mobile card list -->
       <div class="card" data-testid="buying-power-by-asset">
         <div class="section-title">
           Buying Power by Asset Type
           <span class="tooltip-icon">?<span class="tip">Shows how much you can invest in each asset category based on your unallocated cash and the maximum leverage available.</span></span>
         </div>
-        <table class="asset-table">
-          <thead>
-            <tr>
-              <th>Asset Category</th>
-              <th>Max Leverage</th>
-              <th>Unallocated</th>
-              <th>Buying Power</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><div class="cat-cell"><div class="cat-icon stocks">&#128200;</div><span class="cat-name">Stocks</span></div></td>
-              <td><span class="lev-badge">x5</span></td>
-              <td>$84,950</td>
-              <td class="bp-val">$424,750</td>
-            </tr>
-            <tr>
-              <td><div class="cat-cell"><div class="cat-icon crypto">&#9878;</div><span class="cat-name">Crypto</span></div></td>
-              <td><span class="lev-badge">x2</span></td>
-              <td>$84,950</td>
-              <td class="bp-val">$169,900</td>
-            </tr>
-            <tr>
-              <td><div class="cat-cell"><div class="cat-icon indices">&#127760;</div><span class="cat-name">Indices</span></div></td>
-              <td><span class="lev-badge">x20</span></td>
-              <td>$84,950</td>
-              <td class="bp-val">$1,699,000</td>
-            </tr>
-            <tr>
-              <td><div class="cat-cell"><div class="cat-icon commodities">&#9878;</div><span class="cat-name">Commodities</span></div></td>
-              <td><span class="lev-badge">x10</span></td>
-              <td>$84,950</td>
-              <td class="bp-val">$849,500</td>
-            </tr>
-            <tr>
-              <td><div class="cat-cell"><div class="cat-icon etfs">&#128202;</div><span class="cat-name">ETFs</span></div></td>
-              <td><span class="lev-badge">x5</span></td>
-              <td>$84,950</td>
-              <td class="bp-val">$424,750</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="bp-asset-list">
+          <div class="bp-asset-item">
+            <div class="cat-icon stocks">&#128200;</div>
+            <div class="bp-asset-info">
+              <div class="bp-asset-top"><span class="cat-name">Stocks</span><span class="lev-badge">x5</span></div>
+              <div class="bp-asset-bottom"><span>Cash: $84,950</span></div>
+            </div>
+            <div class="bp-asset-right"><div class="bp-label">Buying Power</div><div class="bp-amount">$424,750</div></div>
+          </div>
+          <div class="bp-asset-item">
+            <div class="cat-icon crypto">&#9878;</div>
+            <div class="bp-asset-info">
+              <div class="bp-asset-top"><span class="cat-name">Crypto</span><span class="lev-badge">x2</span></div>
+              <div class="bp-asset-bottom"><span>Cash: $84,950</span></div>
+            </div>
+            <div class="bp-asset-right"><div class="bp-label">Buying Power</div><div class="bp-amount">$169,900</div></div>
+          </div>
+          <div class="bp-asset-item">
+            <div class="cat-icon indices">&#127760;</div>
+            <div class="bp-asset-info">
+              <div class="bp-asset-top"><span class="cat-name">Indices</span><span class="lev-badge">x20</span></div>
+              <div class="bp-asset-bottom"><span>Cash: $84,950</span></div>
+            </div>
+            <div class="bp-asset-right"><div class="bp-label">Buying Power</div><div class="bp-amount">$1,699,000</div></div>
+          </div>
+          <div class="bp-asset-item">
+            <div class="cat-icon commodities">&#9878;</div>
+            <div class="bp-asset-info">
+              <div class="bp-asset-top"><span class="cat-name">Commodities</span><span class="lev-badge">x10</span></div>
+              <div class="bp-asset-bottom"><span>Cash: $84,950</span></div>
+            </div>
+            <div class="bp-asset-right"><div class="bp-label">Buying Power</div><div class="bp-amount">$849,500</div></div>
+          </div>
+          <div class="bp-asset-item">
+            <div class="cat-icon etfs">&#128202;</div>
+            <div class="bp-asset-info">
+              <div class="bp-asset-top"><span class="cat-name">ETFs</span><span class="lev-badge">x5</span></div>
+              <div class="bp-asset-bottom"><span>Cash: $84,950</span></div>
+            </div>
+            <div class="bp-asset-right"><div class="bp-label">Buying Power</div><div class="bp-amount">$424,750</div></div>
+          </div>
+        </div>
       </div>
 
       <!-- Exposure by Asset Category (FR-005, FR-006) -->
@@ -716,7 +754,7 @@ body {
 </div>
 
 <!-- ==================== DESKTOP VIEW ==================== -->
-<div class="desktop-frame" id="desktopView">
+<div class="desktop-frame hidden" id="desktopView">
   <div class="desktop-inner">
     <div class="header">
       <div class="title">Buying Power</div>
@@ -839,7 +877,7 @@ body {
 </div>
 
 <!-- ==================== LOADING STATE ==================== -->
-<div class="phone" id="loadingView" style="display:none;">
+<div class="phone hidden" id="loadingView">
   <div class="phone-inner">
     <div class="status-bar"><div class="time">9:41</div><div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div></div>
     <div class="header"><div class="title">Buying Power</div><div class="desc">Overview of your account balance, margin usage, and available buying power.</div></div>
@@ -857,7 +895,7 @@ body {
 </div>
 
 <!-- ==================== ERROR STATE ==================== -->
-<div class="phone" id="errorView" style="display:none;">
+<div class="phone hidden" id="errorView">
   <div class="phone-inner">
     <div class="status-bar"><div class="time">9:41</div><div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div></div>
     <div class="header"><div class="title">Buying Power</div><div class="desc">Overview of your account balance, margin usage, and available buying power.</div></div>
@@ -877,7 +915,7 @@ body {
 </div>
 
 <!-- ==================== ALL-ZERO STATE ==================== -->
-<div class="phone" id="zeroView" style="display:none;">
+<div class="phone hidden" id="zeroView">
   <div class="phone-inner">
     <div class="status-bar"><div class="time">9:41</div><div class="icons"><span>&#9679;&#9679;&#9679;&#9679;</span></div></div>
     <div class="header"><div class="title">Buying Power</div><div class="desc">Overview of your account balance, margin usage, and available buying power.</div></div>
@@ -933,6 +971,9 @@ function toggleCategory(cat) {
   chev.classList.toggle('open');
 }
 
+var viewIds = ['mobileView', 'desktopView', 'loadingView', 'errorView', 'zeroView'];
+var viewMap = { mobile: 'mobileView', desktop: 'desktopView', loading: 'loadingView', error: 'errorView', zero: 'zeroView' };
+
 document.addEventListener('click', function(e) {
   var tab = e.target.closest('[data-view]');
   if (!tab) return;
@@ -941,17 +982,9 @@ document.addEventListener('click', function(e) {
   document.querySelectorAll('.v-tab').forEach(function(t) { t.classList.remove('active'); });
   tab.classList.add('active');
 
-  document.getElementById('mobileView').style.display = 'none';
-  document.getElementById('desktopView').style.display = 'none';
-  document.getElementById('loadingView').style.display = 'none';
-  document.getElementById('errorView').style.display = 'none';
-  document.getElementById('zeroView').style.display = 'none';
-
-  if (view === 'mobile') document.getElementById('mobileView').style.display = '';
-  else if (view === 'desktop') document.getElementById('desktopView').style.display = '';
-  else if (view === 'loading') document.getElementById('loadingView').style.display = '';
-  else if (view === 'error') document.getElementById('errorView').style.display = '';
-  else if (view === 'zero') document.getElementById('zeroView').style.display = '';
+  viewIds.forEach(function(id) { document.getElementById(id).classList.add('hidden'); });
+  var target = viewMap[view];
+  if (target) document.getElementById(target).classList.remove('hidden');
 });
 </script>
 
