@@ -210,10 +210,6 @@ body {
   font-size: 12px; flex-shrink: 0;
 }
 .cat-icon.stocks { background: #e3f2fd; }
-.cat-icon.crypto { background: #fff3e0; }
-.cat-icon.indices { background: #ede7f6; }
-.cat-icon.commodities { background: #fce4ec; }
-.cat-icon.etfs { background: #e0f2f1; }
 .cat-name { font-weight: 600; color: #1a1a2e; font-size: 13px; }
 .lev-badge {
   display: inline-block; font-size: 11px; font-weight: 700;
@@ -285,32 +281,24 @@ body {
   'use strict';
 
   var CATEGORIES = {
-    stocks:      { name: 'Stocks',      icon: '&#128200;', cls: 'stocks',      maxLev: 5 },
-    crypto:      { name: 'Crypto',      icon: '&#9878;',   cls: 'crypto',      maxLev: 2 },
-    indices:     { name: 'Indices',      icon: '&#127760;', cls: 'indices',     maxLev: 20 },
-    commodities: { name: 'Commodities', icon: '&#9878;',   cls: 'commodities', maxLev: 10 },
-    etfs:        { name: 'ETFs',         icon: '&#128202;', cls: 'etfs',        maxLev: 5 }
+    stocks: { name: 'Stocks', icon: '&#128200;', cls: 'stocks', maxLev: 1 }
   };
 
   var ICON_COLORS = {
-    stocks: '#1565c0', crypto: '#ff8f00', indices: '#6a1b9a',
-    commodities: '#c62828', etfs: '#2e7d32'
+    stocks: '#1565c0'
   };
 
   var state = {
-    cashDeposit: 120000,
+    cashDeposit: 150000,
     positions: [
-      { id: 1, ticker: 'TSLA', name: 'Tesla Inc',       cat: 'stocks',      exposure: 35000, leverage: 5,  pnlPct: 3.5 },
-      { id: 2, ticker: 'AAPL', name: 'Apple Inc',        cat: 'stocks',      exposure: 25000, leverage: 5,  pnlPct: 2.1 },
-      { id: 3, ticker: 'LCID', name: 'Lucid Group',      cat: 'stocks',      exposure: 15000, leverage: 5,  pnlPct: -4.2 },
-      { id: 4, ticker: 'NVDA', name: 'Nvidia Corp',      cat: 'stocks',      exposure: 20000, leverage: 5,  pnlPct: 5.8 },
-      { id: 5, ticker: 'NDX',  name: 'Nasdaq 100',       cat: 'indices',     exposure: 50000, leverage: 20, pnlPct: 1.2 },
-      { id: 6, ticker: 'SPX',  name: 'S&P 500',          cat: 'indices',     exposure: 30000, leverage: 20, pnlPct: 0.8 },
-      { id: 7, ticker: 'OIL',  name: 'Crude Oil WTI',    cat: 'commodities', exposure: 20000, leverage: 10, pnlPct: -1.5 },
-      { id: 8, ticker: 'BTC',  name: 'Bitcoin',           cat: 'crypto',      exposure: 12000, leverage: 2,  pnlPct: 6.0 },
-      { id: 9, ticker: 'ETH',  name: 'Ethereum',          cat: 'crypto',      exposure: 8000,  leverage: 2,  pnlPct: -2.3 }
+      { id: 1, ticker: 'TSLA', name: 'Tesla Inc',       cat: 'stocks', exposure: 20000, leverage: 1, pnlPct: 3.5 },
+      { id: 2, ticker: 'AAPL', name: 'Apple Inc',        cat: 'stocks', exposure: 15000, leverage: 1, pnlPct: 2.1 },
+      { id: 3, ticker: 'NVDA', name: 'Nvidia Corp',      cat: 'stocks', exposure: 18000, leverage: 1, pnlPct: 5.8 },
+      { id: 4, ticker: 'MSFT', name: 'Microsoft Corp',   cat: 'stocks', exposure: 12000, leverage: 1, pnlPct: 1.5 },
+      { id: 5, ticker: 'AMZN', name: 'Amazon.com Inc',   cat: 'stocks', exposure: 8000,  leverage: 1, pnlPct: -0.8 },
+      { id: 6, ticker: 'LCID', name: 'Lucid Group',      cat: 'stocks', exposure: 5000,  leverage: 1, pnlPct: -4.2 }
     ],
-    nextId: 10,
+    nextId: 7,
     expandedCats: {}
   };
 
@@ -420,15 +408,14 @@ body {
 
     h += '<details class="formulas-ref"><summary>Formulas Reference</summary>';
     h += '<div class="formula-list">';
-    h += '<code>Initial Margin (per position)</code> = Exposure / Leverage<br>';
-    h += '<code>Total Initial Margin</code> = Sum of all position IMRs<br>';
+    h += '<code>Amount Invested (per position)</code> = Exposure (fully paid, x1)<br>';
+    h += '<code>Total Invested</code> = Sum of all position amounts<br>';
     h += '<code>Unrealized P/L (per position)</code> = Exposure &times; P/L%<br>';
     h += '<code>Net Liquidation Value</code> = Cash Deposit + Total Unrealized P/L<br>';
-    h += '<code>Unallocated Cash</code> = Net Liquidation Value - Total Initial Margin<br>';
+    h += '<code>Unallocated Cash</code> = Net Liquidation Value - Total Invested<br>';
     h += '<code>Total Exposure</code> = Sum of all position exposures<br>';
-    h += '<code>Loan Financed</code> = Total Exposure - Total Initial Margin<br>';
-    h += '<code>Margin Utilization</code> = Total Initial Margin / Net Liquidation Value &times; 100%<br>';
-    h += '<code>Buying Power</code> = Unallocated Cash &times; Max Category Leverage';
+    h += '<code>Allocation %</code> = Total Invested / Net Liquidation Value &times; 100%<br>';
+    h += '<code>Buying Power</code> = Unallocated Cash (real stocks, no leverage)';
     h += '</div></details>';
 
     document.getElementById('controlsPanel').innerHTML = h;

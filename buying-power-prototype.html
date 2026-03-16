@@ -314,13 +314,12 @@
     color: #fff;
     flex-shrink: 0;
   }
-  .instrument-icon.oil { background: #ff8f00; }
-  .instrument-icon.ndx { background: #1565c0; }
   .instrument-icon.tsla { background: #c62828; }
-  .instrument-icon.lcid { background: #2e7d32; }
-  .instrument-icon.spx { background: #6a1b9a; }
-  .instrument-icon.gold { background: #f9a825; }
   .instrument-icon.aapl { background: #333; }
+  .instrument-icon.nvda { background: #76b900; }
+  .instrument-icon.msft { background: #0078d4; }
+  .instrument-icon.amzn { background: #ff9900; }
+  .instrument-icon.lcid { background: #2e7d32; }
   .position-details .ticker-row {
     display: flex;
     align-items: center;
@@ -335,7 +334,7 @@
     background: #e3f2fd;
     color: #1565c0;
   }
-  .settlement-badge.cfd { background: #f3e5f5; color: #7b1fa2; }
+  
   .collateral-badge {
     font-size: 10px;
     font-weight: 700;
@@ -782,47 +781,47 @@
   'use strict';
 
   // BRD-aligned asset definitions
-  // Leverage per BRD: Stocks CFD x5 (Tesla example), Commodities x10 (Oil example), Indices x20
+  // Real stocks only — all positions are fully paid at x1 leverage
 
   var ASSETS = {
-    OIL:  { tk: 'OIL',     nm: 'Crude Oil WTI',   price: 78.50,  icon: 'oil',  letter: 'O', lev: 10, supportsNoMargin: false },
-    NDX:  { tk: 'NDX',     nm: 'Nasdaq 100',       price: 18200,  icon: 'ndx',  letter: 'N', lev: 20, supportsNoMargin: false },
-    TSLA: { tk: 'TSLA',    nm: 'Tesla Inc',        price: 175.50, icon: 'tsla', letter: 'T', lev: 5, supportsNoMargin: true },
-    LCID: { tk: 'LCID',    nm: 'Lucid Group Inc',  price: 3.20,   icon: 'lcid', letter: 'L', lev: 5, supportsNoMargin: true },
-    SPX:  { tk: 'S&P 500', nm: 'S&P 500 Index',    price: 5200,   icon: 'spx',  letter: 'S', lev: 20, supportsNoMargin: false },
-    GOLD: { tk: 'GOLD',    nm: 'Gold Spot',         price: 2150,   icon: 'gold', letter: 'G', lev: 10, supportsNoMargin: false },
-    AAPL: { tk: 'AAPL',    nm: 'Apple Inc',         price: 178.00, icon: 'aapl', letter: 'A', lev: 5, supportsNoMargin: true }
+    TSLA: { tk: 'TSLA', nm: 'Tesla Inc',       price: 175.50, icon: 'tsla', letter: 'T', lev: 1 },
+    AAPL: { tk: 'AAPL', nm: 'Apple Inc',        price: 178.00, icon: 'aapl', letter: 'A', lev: 1 },
+    NVDA: { tk: 'NVDA', nm: 'Nvidia Corp',      price: 875.00, icon: 'nvda', letter: 'N', lev: 1 },
+    MSFT: { tk: 'MSFT', nm: 'Microsoft Corp',   price: 420.00, icon: 'msft', letter: 'M', lev: 1 },
+    AMZN: { tk: 'AMZN', nm: 'Amazon.com Inc',   price: 178.00, icon: 'amzn', letter: 'Z', lev: 1 },
+    LCID: { tk: 'LCID', nm: 'Lucid Group Inc',  price: 3.20,   icon: 'lcid', letter: 'L', lev: 1 }
   };
 
   var SCENARIOS = [
-    { id: 'baseline', name: '1: Baseline Flow', steps: [
+    { id: 'baseline', name: '1: Portfolio Setup', steps: [
       { type: 'deposit', amount: 100000 },
-      { type: 'trade', asset: 'OIL', notional: 20000, side: 'buy' },
-      { type: 'trade', asset: 'NDX', notional: 50000, side: 'buy' },
-      { type: 'trade', asset: 'TSLA', notional: 10000, side: 'buy' },
-      { type: 'trade', asset: 'LCID', notional: 3000, side: 'buy', noMarginDefault: true }
+      { type: 'trade', asset: 'TSLA', notional: 20000, side: 'buy' },
+      { type: 'trade', asset: 'AAPL', notional: 15000, side: 'buy' },
+      { type: 'trade', asset: 'NVDA', notional: 25000, side: 'buy' },
+      { type: 'trade', asset: 'LCID', notional: 5000, side: 'buy' }
     ]},
     { id: 'profit', name: '2: Profit Expansion', steps: [
-      { type: 'deposit', amount: 50000 },
-      { type: 'trade', asset: 'SPX', notional: 50000, side: 'buy' },
+      { type: 'deposit', amount: 80000 },
+      { type: 'trade', asset: 'MSFT', notional: 20000, side: 'buy' },
       { type: 'market', direction: 'up', pct: 5, label: 'Market rallies +5%' },
-      { type: 'trade', asset: 'GOLD', notional: 20000, side: 'buy' },
+      { type: 'trade', asset: 'AMZN', notional: 15000, side: 'buy' },
       { type: 'summary', label: 'Unrealized P&L expanded Unallocated Cash' }
     ]},
-    { id: 'pressure', name: '3: Margin Pressure', steps: [
+    { id: 'pressure', name: '3: Market Pressure', steps: [
       { type: 'deposit', amount: 75000 },
-      { type: 'trade', asset: 'NDX', notional: 80000, side: 'buy' },
-      { type: 'trade', asset: 'OIL', notional: 30000, side: 'buy' },
-      { type: 'trade', asset: 'AAPL', notional: 5000, side: 'buy', noMarginDefault: true },
+      { type: 'trade', asset: 'TSLA', notional: 25000, side: 'buy' },
+      { type: 'trade', asset: 'NVDA', notional: 25000, side: 'buy' },
+      { type: 'trade', asset: 'AAPL', notional: 18000, side: 'buy' },
       { type: 'market', direction: 'down', pct: 8, label: 'Market drops -8%' },
-      { type: 'warning', label: 'Margin Warning — Action Required' }
+      { type: 'warning', label: 'Allocation Warning — Action Required' }
     ]},
-    { id: 'hedged', name: '4: Hedged Exposure', steps: [
+    { id: 'diversified', name: '4: Diversified Portfolio', steps: [
       { type: 'deposit', amount: 100000 },
-      { type: 'trade', asset: 'SPX', notional: 80000, side: 'buy' },
-      { type: 'trade', asset: 'SPX', notional: 80000, side: 'short' },
-      { type: 'netting', label: 'Risk netting reduces margin' },
-      { type: 'summary', label: 'Netting freed margin, increasing Unallocated Cash' }
+      { type: 'trade', asset: 'TSLA', notional: 15000, side: 'buy' },
+      { type: 'trade', asset: 'AAPL', notional: 15000, side: 'buy' },
+      { type: 'trade', asset: 'NVDA', notional: 15000, side: 'buy' },
+      { type: 'trade', asset: 'MSFT', notional: 15000, side: 'buy' },
+      { type: 'summary', label: 'Diversified portfolio with cash remaining' }
     ]}
   ];
 
@@ -877,16 +876,14 @@
       } else if (s.type === 'trade') {
         acct = cloneAcct(snaps[snaps.length - 1]);
         var asset = ASSETS[s.asset];
-        var isNoMargin = !!s.noMarginDefault;
-        var lev = isNoMargin ? 1 : asset.lev;
-        var imr = s.notional / lev;
+        var imr = s.notional;
 
         acct.totalIMR += imr;
         acct.totalExposure += s.notional;
 
         acct.positions.push({
-          asset: s.asset, side: s.side, notional: s.notional, leverage: lev,
-          imr: imr, type: isNoMargin ? 'real' : 'cfd',
+          asset: s.asset, side: s.side, notional: s.notional, leverage: 1,
+          imr: imr, type: 'real',
           pnl: 0, isNew: true
         });
 
@@ -1113,11 +1110,10 @@
         h += '<div class="instrument-icon ' + a.icon + '">' + a.letter + '</div>';
         h += '<div class="position-details">';
         h += '<div class="ticker-row"><span class="ticker">' + a.tk + '</span>';
-        h += '<span class="settlement-badge ' + (p.type === 'real' ? '' : 'cfd') + '">' + (p.type === 'real' ? 'Stock (Real) x1' : 'CFD x' + p.leverage) + '</span>';
-        if (p.type === 'real') h += '<span class="collateral-badge">Collateral</span>';
+        h += '<span class="settlement-badge">Real Stock</span>';
         h += '</div>';
-        h += '<div class="name">' + (p.side === 'buy' ? 'Long' : 'Short') + ' &middot; ' + a.nm + '</div>';
-        h += '<div class="margin-info">Notional: ' + fmtK(p.notional) + (p.imr > 0 ? ' &middot; IMR: ' + fmtK(p.imr) : '') + '</div>';
+        h += '<div class="name">' + a.nm + '</div>';
+        h += '<div class="margin-info">Invested: ' + fmtK(p.notional) + '</div>';
         h += '</div></div>';
         h += '<div class="position-right">';
         if (p.pnl !== 0) {
@@ -1130,57 +1126,39 @@
       });
     }
 
-    var hasReal = acct.positions.some(function(p) { return p.type === 'real'; });
-    if (hasReal) {
-      h += '<div class="collateral-callout"><div class="cc-icon">&#9989;</div><div class="cc-text">Real stock holdings have IMR equal to their full notional value (x1 leverage). They count toward Total IMR.</div></div>';
-    }
-
     h += '<div class="spacer"></div></div>';
     return h;
   }
 
   function renderTradeTicket(step, acct) {
     var asset = ASSETS[step.asset];
-    var isNoMargin = !!step.noMarginDefault;
-    var lev = isNoMargin ? 1 : asset.lev;
-    var imr = step.notional / lev;
+    var imr = step.notional;
     var prevSnaps = getSnaps();
     var prevAcct = state.step > 0 ? prevSnaps[state.step - 1] : acct;
     var prevUc = unallocatedCash(prevAcct);
     var projectedUc = prevUc - imr;
 
-    var h = '<div class="trade-section' + (step.side === 'short' ? ' short-border' : '') + '">';
-    h += '<div class="trade-label">' + (step.side === 'buy' ? 'Buy' : 'Short') + ' Order</div>';
+    var h = '<div class="trade-section">';
+    h += '<div class="trade-label">Buy Order</div>';
 
     h += '<div class="instrument-row">';
     h += '<div class="instrument-left"><div class="instrument-icon ' + asset.icon + '" style="width:44px;height:44px;font-size:15px;">' + asset.letter + '</div>';
     h += '<div class="instrument-info"><div class="ticker">' + asset.tk + '</div><div class="name">' + asset.nm + '</div></div></div>';
     h += '<div class="instrument-price">' + asset.price.toLocaleString() + '</div></div>';
 
-    h += '<div class="input-box"><span class="label">Notional Value</span><span class="value">' + fmtK(step.notional) + '</span></div>';
-    h += '<div class="sub-label">Initial Margin Required: ' + fmtK(imr) + (isNoMargin ? ' (fully paid)' : '') + '</div>';
+    h += '<div class="input-box"><span class="label">Investment Amount</span><span class="value">' + fmtK(step.notional) + '</span></div>';
+    h += '<div class="sub-label">Full amount required (no leverage)</div>';
 
-    h += '<div class="leverage-badge' + (isNoMargin ? ' real-badge' : '') + '"><span class="lock">&#128274;</span> ' + (isNoMargin ? 'No Leverage — Real Stock (x1)' : 'Leverage: x' + lev + ' (auto-applied per BRD)') + '</div>';
-
-    if (asset.supportsNoMargin) {
-      h += '<div class="margin-toggle-wrap">';
-      h += '<div><div class="mt-label">Buy without margin</div>';
-      h += '<div class="mt-sub">Purchase real stock at x1 — no overnight fees, acts as collateral</div></div>';
-      h += '<div class="toggle-switch ' + (isNoMargin ? 'on' : 'off') + '" data-action="toggle-nm"><div class="knob"></div></div>';
-      h += '</div>';
-    }
+    h += '<div class="leverage-badge real-badge"><span class="lock">&#128274;</span> Real Stock — Fully Paid (x1)</div>';
 
     h += '<div class="detail-row"><span class="label">Order Type</span><span class="value">Market Order</span></div>';
-    h += '<div class="detail-row"><span class="label">Settlement Type</span><span class="value" style="color:' + (isNoMargin ? '#1565c0' : '#7b1fa2') + '">' + (isNoMargin ? 'Real (Fully Paid)' : 'CFD') + '</span></div>';
-    if (!isNoMargin) {
-      h += '<div class="detail-row"><span class="label">Overnight Fee</span><span class="value">-$' + (step.notional * 0.000078).toFixed(2) + '/day</span></div>';
-    }
+    h += '<div class="detail-row"><span class="label">Settlement</span><span class="value" style="color:#1565c0">Real Stock (Fully Paid)</span></div>';
     h += '<div class="divider"></div>';
-    h += '<div class="detail-row"><span class="label">Initial Margin Requirement</span><span class="value">' + (isNoMargin ? fmtK(imr) + ' (fully paid)' : fmtK(imr)) + '</span></div>';
+    h += '<div class="detail-row"><span class="label">Amount Required</span><span class="value">' + fmtK(imr) + '</span></div>';
     h += '<div class="detail-row"><span class="label">Unallocated Cash</span><span class="value green">' + fmtK(prevUc) + '</span></div>';
     h += '<div class="detail-row"><span class="label">Projected Unallocated Cash</span><span class="value ' + (projectedUc >= 0 ? 'green' : 'red') + '">' + fmtK(projectedUc) + '</span></div>';
 
-    h += '<div class="disclosure">All trades execute within your Margin Account. Leverage is determined by platform rules (BRD Section 2.2).</div>';
+    h += '<div class="disclosure">All purchases are fully paid real stock holdings. No leverage is applied.</div>';
     h += '</div>';
     return h;
   }
@@ -1250,7 +1228,7 @@
     h += '</div>';
 
     if (state.scenario === 1) {
-      h += '<div class="collateral-callout"><div class="cc-icon">&#128161;</div><div class="cc-text"><strong>Key Insight:</strong> Unrealized profits on CFD positions increase your Net Liquidation Value, which expands Unallocated Cash (NLV - Total IMR) — allowing additional positions without depositing more funds.</div></div>';
+      h += '<div class="collateral-callout"><div class="cc-icon">&#128161;</div><div class="cc-text"><strong>Key Insight:</strong> Unrealized profits on your stock positions increase your Net Liquidation Value, which expands Unallocated Cash (NLV - Total Invested) — allowing additional purchases without depositing more funds.</div></div>';
     }
     if (state.scenario === 3) {
       h += '<div class="collateral-callout"><div class="cc-icon">&#128737;</div><div class="cc-text"><strong>Key Insight:</strong> Hedging with opposing positions on the same asset triggers risk netting, reducing effective margin requirements and freeing Unallocated Cash (Buying Power).</div></div>';
@@ -1284,11 +1262,9 @@
     var sc = SCENARIOS[state.scenario];
     var step = sc.steps[state.step];
     var asset = ASSETS[step.asset];
-    var isNoMargin = !!step.noMarginDefault;
     var ov = document.getElementById('successOverlay');
     document.getElementById('successSub').textContent =
-      (step.side === 'buy' ? 'Bought' : 'Shorted') + ' ' + asset.tk + ' ' +
-      (isNoMargin ? '(Real Stock x1)' : '(CFD x' + asset.lev + ')') + ' — ' + fmtK(step.notional);
+      'Bought ' + asset.tk + ' (Real Stock) — ' + fmtK(step.notional);
     ov.classList.add('show');
     setTimeout(function() { ov.classList.remove('show'); if (cb) cb(); }, 1200);
   }
@@ -1334,12 +1310,6 @@
       }
     } else if (a === 'prev') {
       if (state.step > 0) { state.step--; render(); }
-    } else if (a === 'toggle-nm') {
-      var sc2 = SCENARIOS[state.scenario];
-      var step2 = sc2.steps[state.step];
-      step2.noMarginDefault = !step2.noMarginDefault;
-      state.accounts[state.scenario] = null;
-      render();
     }
   });
 
