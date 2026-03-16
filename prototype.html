@@ -777,13 +777,14 @@
           <div class="margin-overview">
             <div class="section-title">Margin Account Overview</div>
             <div class="equity-value">$100,000.00</div>
-            <div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">$2,500.00</span></div>
-            <div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">$10,000.00</span></div>
-            <div class="metric-row"><span class="label">Remaining Margin</span><span class="value" style="color:#00c853;">$72,500.00</span></div>
+            <div class="metric-row"><span class="label">Exposure</span><span class="value">$75,000.00</span></div>
+            <div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">$35,000.00</span></div>
+            <div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">$37,500.00</span></div>
+            <div class="metric-row"><span class="label">Remaining Margin</span><span class="value" style="color:#00c853;">$65,000.00</span></div>
             <div class="health-bar-container">
               <div class="health-bar-label">
                 <span class="label">Margin Health</span>
-                <span class="value">1000%</span>
+                <span class="value">267%</span>
               </div>
               <div class="health-bar"><div class="fill green" style="width:100%"></div></div>
               <div class="health-badge safe">Safe</div>
@@ -798,7 +799,7 @@
               <div class="position-details">
                 <div class="ticker-row"><span class="ticker">AAPL</span><span class="settlement-badge">Stock (Real) x1</span></div>
                 <div class="name">Apple Inc</div>
-                <div class="margin-info">Notional: $25,000 &middot; Cash: $25,000 (Collateral)</div>
+                <div class="margin-info">Notional: $25,000 &middot; IMR: $25,000 &middot; MMR: $12,500</div>
               </div>
             </div>
             <div class="position-right">
@@ -811,9 +812,9 @@
             <div class="position-left">
               <div class="instrument-icon tsla" style="width:36px;height:36px;font-size:12px;">T</div>
               <div class="position-details">
-                <div class="ticker-row"><span class="ticker">TSLA</span><span class="settlement-badge cfd">CFD x20</span></div>
+                <div class="ticker-row"><span class="ticker">TSLA</span><span class="settlement-badge cfd">CFD x5</span></div>
                 <div class="name">Tesla Inc</div>
-                <div class="margin-info">Notional: $18,000 &middot; IMR: $900 &middot; MMR: $3,600</div>
+                <div class="margin-info">Notional: $18,000 &middot; IMR: $3,600 &middot; MMR: $9,000</div>
               </div>
             </div>
             <div class="position-right">
@@ -826,9 +827,9 @@
             <div class="position-left">
               <div class="instrument-icon msft" style="width:36px;height:36px;font-size:12px;">M</div>
               <div class="position-details">
-                <div class="ticker-row"><span class="ticker">MSFT</span><span class="settlement-badge cfd">CFD x20</span></div>
+                <div class="ticker-row"><span class="ticker">MSFT</span><span class="settlement-badge cfd">CFD x5</span></div>
                 <div class="name">Microsoft Corp</div>
-                <div class="margin-info">Notional: $32,000 &middot; IMR: $1,600 &middot; MMR: $6,400</div>
+                <div class="margin-info">Notional: $32,000 &middot; IMR: $6,400 &middot; MMR: $16,000</div>
               </div>
             </div>
             <div class="position-right">
@@ -860,7 +861,7 @@
         <div class="notif-bg">
           <div class="level-chips">
             <div class="level-chip yellow-chip" id="chipYellow" data-action="set-notif-yellow">Warning 142%</div>
-            <div class="level-chip orange-chip inactive" id="chipOrange" data-action="set-notif-orange">Alert 112%</div>
+            <div class="level-chip orange-chip inactive" id="chipOrange" data-action="set-notif-orange">Close-only 112%</div>
             <div class="level-chip" id="chipLiquidation" data-action="go-liquidation" style="background:#ffebee;color:#c62828;border-color:#f44336;opacity:0.45;">Liquidation</div>
           </div>
           <div id="notifContent"></div>
@@ -887,14 +888,14 @@
         </div>
         <div class="notif-bg">
           <div class="notif-card red">
-            <div class="notif-title">Margin Liquidation</div>
+            <div class="notif-title">Liquidation Risk</div>
             <div class="notif-text">Your equity has fallen below the maintenance margin requirement. Positions are being closed automatically to restore your account health.</div>
             <div class="notif-data">
               <div><span class="label">Equity</span><br><span class="value">$14,500</span></div>
               <div><span class="label">Maintenance Margin</span><br><span class="value">$15,000</span></div>
             </div>
             <div style="background:rgba(255,255,255,0.6);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;">
-              <span style="color:#c62828;font-weight:700;">Closing:</span> AAPL — highest margin requirement ($6,250)
+              <span style="color:#c62828;font-weight:700;">Closing:</span> AAPL — highest margin requirement ($25,000)
             </div>
             <div class="notif-actions">
               <button class="btn-outline small" data-action="go-portfolio">View Portfolio</button>
@@ -907,7 +908,7 @@
                 <span class="value" style="color:#c62828;">96.7%</span>
               </div>
               <div class="health-bar"><div class="fill red" style="width:97%"></div></div>
-              <div class="health-badge liquidation">Liquidation</div>
+              <div class="health-badge liquidation">Liquidation Risk</div>
             </div>
           </div>
           <div class="spacer"></div>
@@ -916,7 +917,7 @@
           <div class="nav-item" data-action="nav-watchlist"><div class="nav-icon"></div>Watchlist</div>
           <div class="nav-item" data-action="nav-portfolio"><div class="nav-icon"></div>Portfolio</div>
           <div class="nav-item" data-action="nav-trade"><div class="nav-icon"></div>Trade</div>
-          <div class="nav-item" data-action="nav-notifications"><div class="nav-icon"></div>Feed</div>
+          <div class="nav-item active" data-action="nav-notifications"><div class="nav-icon"></div>Feed</div>
           <div class="nav-item" data-action="nav-more"><div class="nav-icon"></div>More</div>
         </div>
       </div>
@@ -939,9 +940,9 @@
   'use strict';
 
   var instruments = {
-    AAPL: { ticker: 'AAPL', name: 'Apple Inc', price: 175.50, iconClass: 'aapl', iconLetter: 'A', supportsNoMargin: true },
-    TSLA: { ticker: 'TSLA', name: 'Tesla Inc', price: 176.00, iconClass: 'tsla', iconLetter: 'T', supportsNoMargin: true },
-    MSFT: { ticker: 'MSFT', name: 'Microsoft Corp', price: 420.50, iconClass: 'msft', iconLetter: 'M', supportsNoMargin: true }
+    AAPL: { ticker: 'AAPL', name: 'Apple Inc', price: 175.50, iconClass: 'aapl', iconLetter: 'A', supportsNoMargin: true, leverage: 5 },
+    TSLA: { ticker: 'TSLA', name: 'Tesla Inc', price: 176.00, iconClass: 'tsla', iconLetter: 'T', supportsNoMargin: true, leverage: 5 },
+    MSFT: { ticker: 'MSFT', name: 'Microsoft Corp', price: 420.50, iconClass: 'msft', iconLetter: 'M', supportsNoMargin: true, leverage: 5 }
   };
 
   var state = {
@@ -955,7 +956,7 @@
     amountValue: 5000,
     slEnabled: false,
     tpEnabled: false,
-    availableMargin: 72500,
+    availableMargin: 65000,
     notifLevel: 'yellow'
   };
 
@@ -965,7 +966,8 @@
   }
 
   function getLeverage() {
-    return getSettlement() === 'real' ? 1 : 20;
+    if (getSettlement() === 'real') return 1;
+    return instruments[state.instrument].leverage;
   }
 
   function getInputValue() {
@@ -982,17 +984,13 @@
   }
 
   function getIMR() {
-    if (getSettlement() === 'real') return 0;
+    var notional;
     if (state.inputMode === 'shares') {
-      return (state.sharesValue * instruments[state.instrument].price) / getLeverage();
+      notional = state.sharesValue * instruments[state.instrument].price;
+    } else {
+      notional = getSettlement() === 'real' ? state.amountValue : state.amountValue * getLeverage();
     }
-    return state.amountValue;
-  }
-
-  function getCashRequired() {
-    if (getSettlement() !== 'real') return 0;
-    if (state.inputMode === 'shares') return state.sharesValue * instruments[state.instrument].price;
-    return state.amountValue;
+    return notional / getLeverage();
   }
 
   function fmt(n) {
@@ -1020,8 +1018,7 @@
     var lev = getLeverage();
     var notional = getNotionalValue();
     var imr = getIMR();
-    var cashReq = getCashRequired();
-    var cost = isCfdSettlement() ? imr : cashReq;
+    var cost = imr;
     var remaining = state.availableMargin - cost;
     var sufficient = remaining >= 0;
     var isBuy = state.side === 'buy';
@@ -1085,8 +1082,7 @@
       detailRows += '<div class="detail-row"><span class="label">Settlement</span><span class="value" style="color:#1565c0;font-weight:700;">Real (Fully Paid)</span></div>';
       detailRows += '<div class="detail-row"><span class="label">Est. Opening Cost</span><span class="value">$1.00</span></div>';
       detailRows += '<div class="divider"></div>';
-      detailRows += '<div class="detail-row"><span class="label">Cash Required</span><span class="value">' + fmt(cashReq) + '</span></div>';
-      detailRows += '<div class="detail-row"><span class="label">Initial Margin Required</span><span class="value">$0 (fully paid)</span></div>';
+      detailRows += '<div class="detail-row"><span class="label">Initial Margin Required</span><span class="value">' + fmt(imr) + ' (fully paid)</span></div>';
     }
     detailRows += '<div class="detail-row"><span class="label">Available Margin</span><span class="value ' + (sufficient ? 'green' : '') + '">' + fmt(state.availableMargin) + '</span></div>';
     detailRows += '<div class="detail-row"><span class="label">Projected Remaining</span><span class="value ' + (remaining >= 0 ? 'green' : 'red') + '">' + fmt(remaining) + '</span></div>';
@@ -1170,7 +1166,7 @@
       html += '</div>';
     } else {
       html += '<div class="notif-card orange">';
-      html += '<div class="notif-title">Margin Alert — Action Required</div>';
+      html += '<div class="notif-title">Close-only — Immediate Action Required</div>';
       html += '<div class="notif-text">Your margin health has dropped to <strong>112%</strong>. Liquidation will occur at 100%. Take action now.</div>';
       html += '<div class="notif-data"><div><span class="label">Equity</span><br><span class="value">$16,800</span></div>';
       html += '<div><span class="label">Maintenance Margin</span><br><span class="value">$15,000</span></div></div>';
@@ -1229,7 +1225,7 @@
     var inst = instruments[state.instrument];
     var overlay = document.getElementById('successOverlay');
     document.getElementById('successDetail').textContent =
-      (state.side === 'buy' ? 'Bought' : 'Shorted') + ' ' + inst.ticker + ' (' + (getSettlement() === 'cfd' ? 'CFD x20' : 'Stock Real x1') + ')';
+      (state.side === 'buy' ? 'Bought' : 'Shorted') + ' ' + inst.ticker + ' (' + (getSettlement() === 'cfd' ? 'CFD x' + instruments[state.instrument].leverage : 'Stock Real x1') + ')';
     overlay.classList.add('show');
     setTimeout(function() {
       overlay.classList.remove('show');

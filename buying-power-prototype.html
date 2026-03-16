@@ -272,7 +272,7 @@
   }
   .health-badge.safe { background: #e8f5e9; color: #2e7d32; }
   .health-badge.warning { background: #fff3e0; color: #e65100; }
-  .health-badge.critical { background: #fbe9e7; color: #bf360c; }
+  .health-badge.close-only { background: #fbe9e7; color: #bf360c; }
   .health-badge.liquidation { background: #ffebee; color: #c62828; }
 
   /* Position cards — matches eToro mockups */
@@ -702,48 +702,47 @@
   'use strict';
 
   // BRD-aligned asset definitions
-  // Leverage per BRD: Stocks Real x4, Stocks CFD x20, Indices/Commodities x20
-  // MMR Rate per BRD: 0.20 for demonstration (BRD table shows 0.50 for stocks,
-  // BRD example uses 0.30 — using 0.20 for cleaner demo numbers)
-  var MMR_RATE = 0.20;
+  // Leverage per BRD: Stocks CFD x5 (Tesla example), Commodities x10 (Oil example), Indices x20
+  // MMR Rate per BRD: 0.50 ("start with 50% and adjust later on" — BRD page 11)
+  var MMR_RATE = 0.50;
 
   var ASSETS = {
-    OIL:  { tk: 'OIL',     nm: 'Crude Oil WTI',   price: 78.50,  icon: 'oil',  letter: 'O', lev: 20, supportsNoMargin: false },
+    OIL:  { tk: 'OIL',     nm: 'Crude Oil WTI',   price: 78.50,  icon: 'oil',  letter: 'O', lev: 10, supportsNoMargin: false },
     NDX:  { tk: 'NDX',     nm: 'Nasdaq 100',       price: 18200,  icon: 'ndx',  letter: 'N', lev: 20, supportsNoMargin: false },
-    TSLA: { tk: 'TSLA',    nm: 'Tesla Inc',        price: 175.50, icon: 'tsla', letter: 'T', lev: 20, supportsNoMargin: true },
-    LCID: { tk: 'LCID',    nm: 'Lucid Group Inc',  price: 3.20,   icon: 'lcid', letter: 'L', lev: 20, supportsNoMargin: true },
+    TSLA: { tk: 'TSLA',    nm: 'Tesla Inc',        price: 175.50, icon: 'tsla', letter: 'T', lev: 5, supportsNoMargin: true },
+    LCID: { tk: 'LCID',    nm: 'Lucid Group Inc',  price: 3.20,   icon: 'lcid', letter: 'L', lev: 5, supportsNoMargin: true },
     SPX:  { tk: 'S&P 500', nm: 'S&P 500 Index',    price: 5200,   icon: 'spx',  letter: 'S', lev: 20, supportsNoMargin: false },
-    GOLD: { tk: 'GOLD',    nm: 'Gold Spot',         price: 2150,   icon: 'gold', letter: 'G', lev: 20, supportsNoMargin: false },
-    AAPL: { tk: 'AAPL',    nm: 'Apple Inc',         price: 178.00, icon: 'aapl', letter: 'A', lev: 20, supportsNoMargin: true }
+    GOLD: { tk: 'GOLD',    nm: 'Gold Spot',         price: 2150,   icon: 'gold', letter: 'G', lev: 10, supportsNoMargin: false },
+    AAPL: { tk: 'AAPL',    nm: 'Apple Inc',         price: 178.00, icon: 'aapl', letter: 'A', lev: 5, supportsNoMargin: true }
   };
 
   var SCENARIOS = [
     { id: 'baseline', name: '1: Baseline Flow', steps: [
       { type: 'deposit', amount: 100000 },
-      { type: 'trade', asset: 'OIL', notional: 200000, side: 'buy' },
-      { type: 'trade', asset: 'NDX', notional: 500000, side: 'buy' },
-      { type: 'trade', asset: 'TSLA', notional: 50000, side: 'buy' },
-      { type: 'trade', asset: 'LCID', notional: 50000, side: 'buy', noMarginDefault: true }
+      { type: 'trade', asset: 'OIL', notional: 20000, side: 'buy' },
+      { type: 'trade', asset: 'NDX', notional: 50000, side: 'buy' },
+      { type: 'trade', asset: 'TSLA', notional: 10000, side: 'buy' },
+      { type: 'trade', asset: 'LCID', notional: 3000, side: 'buy', noMarginDefault: true }
     ]},
     { id: 'profit', name: '2: Profit Expansion', steps: [
       { type: 'deposit', amount: 50000 },
-      { type: 'trade', asset: 'SPX', notional: 500000, side: 'buy' },
+      { type: 'trade', asset: 'SPX', notional: 50000, side: 'buy' },
       { type: 'market', direction: 'up', pct: 5, label: 'Market rallies +5%' },
-      { type: 'trade', asset: 'GOLD', notional: 200000, side: 'buy' },
+      { type: 'trade', asset: 'GOLD', notional: 20000, side: 'buy' },
       { type: 'summary', label: 'Unrealized P&L expanded Remaining Margin' }
     ]},
     { id: 'pressure', name: '3: Margin Pressure', steps: [
       { type: 'deposit', amount: 75000 },
-      { type: 'trade', asset: 'NDX', notional: 500000, side: 'buy' },
-      { type: 'trade', asset: 'OIL', notional: 200000, side: 'buy' },
-      { type: 'trade', asset: 'AAPL', notional: 20000, side: 'buy', noMarginDefault: true },
+      { type: 'trade', asset: 'NDX', notional: 80000, side: 'buy' },
+      { type: 'trade', asset: 'OIL', notional: 30000, side: 'buy' },
+      { type: 'trade', asset: 'AAPL', notional: 5000, side: 'buy', noMarginDefault: true },
       { type: 'market', direction: 'down', pct: 8, label: 'Market drops -8%' },
       { type: 'warning', label: 'Margin Warning — Action Required' }
     ]},
     { id: 'hedged', name: '4: Hedged Exposure', steps: [
       { type: 'deposit', amount: 100000 },
-      { type: 'trade', asset: 'SPX', notional: 500000, side: 'buy' },
-      { type: 'trade', asset: 'SPX', notional: 500000, side: 'short' },
+      { type: 'trade', asset: 'SPX', notional: 80000, side: 'buy' },
+      { type: 'trade', asset: 'SPX', notional: 80000, side: 'short' },
       { type: 'netting', label: 'Risk netting reduces margin' },
       { type: 'summary', label: 'Netting freed margin, increasing Remaining Margin' }
     ]}
@@ -801,9 +800,8 @@
         var asset = ASSETS[s.asset];
         var isNoMargin = !!s.noMarginDefault;
         var lev = isNoMargin ? 1 : asset.lev;
-        var imr = isNoMargin ? 0 : s.notional / lev;
-        var mmr = isNoMargin ? 0 : s.notional * MMR_RATE;
-        var cashUsed = isNoMargin ? s.notional : 0;
+        var imr = s.notional / lev;
+        var mmr = s.notional * MMR_RATE;
 
         acct.totalIMR += imr;
         acct.totalMMR += mmr;
@@ -811,7 +809,7 @@
         acct.positions.push({
           asset: s.asset, side: s.side, notional: s.notional, leverage: lev,
           imr: imr, mmr: mmr, type: isNoMargin ? 'real' : 'cfd',
-          pnl: 0, isNew: true, cashUsed: cashUsed
+          pnl: 0, isNew: true
         });
 
         for (var j = 0; j < acct.positions.length - 1; j++) acct.positions[j].isNew = false;
@@ -849,13 +847,7 @@
 
   // BRD: Remaining Margin = Equity - Total IMR
   function remainingMargin(a) {
-    return a.equity - a.totalIMR - realCashUsed(a);
-  }
-
-  function realCashUsed(a) {
-    var t = 0;
-    a.positions.forEach(function(p) { if (p.type === 'real') t += (p.cashUsed || 0); });
-    return t;
+    return a.equity - a.totalIMR;
   }
 
   // BRD: Margin Health Ratio = Equity / Total MMR
@@ -866,10 +858,10 @@
 
   function healthBand(ratio) {
     if (ratio === Infinity) return { label: 'Safe', cls: 'safe', color: 'green', pct: 100 };
-    if (ratio >= 2.0) return { label: 'Safe', cls: 'safe', color: 'green', pct: 100 };
-    if (ratio >= 1.5) return { label: 'Warning', cls: 'warning', color: 'yellow', pct: Math.min(100, ratio / 2 * 100) };
-    if (ratio >= 1.0) return { label: 'Critical', cls: 'critical', color: 'red', pct: Math.min(100, ratio / 2 * 100) };
-    return { label: 'Liquidation', cls: 'liquidation', color: 'red', pct: Math.min(100, ratio / 2 * 100) };
+    if (ratio >= 1.5) return { label: 'Safe', cls: 'safe', color: 'green', pct: 100 };
+    if (ratio >= 1.2) return { label: 'Warning', cls: 'warning', color: 'yellow', pct: Math.min(100, ratio / 1.5 * 100) };
+    if (ratio > 1.0) return { label: 'Close-only', cls: 'close-only', color: 'red', pct: Math.min(100, ratio / 1.5 * 100) };
+    return { label: 'Liquidation Risk', cls: 'liquidation', color: 'red', pct: Math.min(100, ratio / 1.5 * 100) };
   }
 
   function fmt(n) {
@@ -1002,7 +994,7 @@
 
     // Buying Power hero
     h += '<div class="bp-hero">';
-    h += '<div class="lbl">Remaining Margin (Buying Power)</div>';
+    h += '<div class="lbl">Remaining Margin</div>';
     h += '<div class="big ' + bpColor + '">' + fmtK(rm) + '</div>';
     if (rmDelta !== 0) {
       h += '<div class="delta ' + (rmDelta > 0 ? 'up' : 'down') + '">' + (rmDelta > 0 ? '+' : '') + fmtK(rmDelta) + '</div>';
@@ -1018,6 +1010,10 @@
     if (eqDelta !== 0) h += '<span class="metric-delta ' + (eqDelta > 0 ? 'up' : 'dn') + '">' + (eqDelta > 0 ? '+' : '') + fmtK(eqDelta) + '</span>';
     h += '</span></div>';
 
+    var totalExposure = 0;
+    acct.positions.forEach(function(p) { totalExposure += p.notional; });
+    h += '<div class="metric-row"><span class="label">Exposure</span><span class="value">' + fmtK(totalExposure) + '</span></div>';
+
     h += '<div class="metric-row"><span class="label">Total Initial Margin</span><span class="value">' + fmtK(acct.totalIMR);
     if (imrDelta !== 0) h += '<span class="metric-delta ' + (imrDelta > 0 ? 'dn' : 'up') + '">' + (imrDelta > 0 ? '+' : '') + fmtK(imrDelta) + '</span>';
     h += '</span></div>';
@@ -1025,11 +1021,6 @@
     h += '<div class="metric-row"><span class="label">Total Maintenance Margin</span><span class="value">' + fmtK(acct.totalMMR);
     if (mmrDelta !== 0) h += '<span class="metric-delta dn">+' + fmtK(mmrDelta) + '</span>';
     h += '</span></div>';
-
-    var rcu = realCashUsed(acct);
-    if (rcu > 0) {
-      h += '<div class="metric-row"><span class="label">Real Stock Holdings</span><span class="value">' + fmtK(rcu) + '</span></div>';
-    }
 
     h += '<div class="metric-row"><span class="label">Remaining Margin</span><span class="value ' + (rm > 0 ? 'green' : 'red') + '">' + fmtK(rm) + '</span></div>';
 
@@ -1075,7 +1066,7 @@
 
     var hasReal = acct.positions.some(function(p) { return p.type === 'real'; });
     if (hasReal) {
-      h += '<div class="collateral-callout"><div class="cc-icon">&#9989;</div><div class="cc-text">Real stock holdings contribute as collateral to your Remaining Margin within the Margin Account.</div></div>';
+      h += '<div class="collateral-callout"><div class="cc-icon">&#9989;</div><div class="cc-text">Real stock holdings have IMR equal to their full notional value (x1 leverage). They count toward Total IMR per BRD formula.</div></div>';
     }
 
     h += '<div class="spacer"></div></div>';
@@ -1086,12 +1077,12 @@
     var asset = ASSETS[step.asset];
     var isNoMargin = !!step.noMarginDefault;
     var lev = isNoMargin ? 1 : asset.lev;
-    var imr = isNoMargin ? 0 : step.notional / lev;
-    var mmr = isNoMargin ? 0 : step.notional * MMR_RATE;
+    var imr = step.notional / lev;
+    var mmr = step.notional * MMR_RATE;
     var prevSnaps = getSnaps();
     var prevAcct = state.step > 0 ? prevSnaps[state.step - 1] : acct;
     var prevRm = remainingMargin(prevAcct);
-    var projectedRm = isNoMargin ? (prevRm - step.notional) : (prevRm - imr);
+    var projectedRm = prevRm - imr;
 
     var h = '<div class="trade-section' + (step.side === 'short' ? ' short-border' : '') + '">';
     h += '<div class="trade-label">' + (step.side === 'buy' ? 'Buy' : 'Short') + ' Order</div>';
@@ -1102,7 +1093,7 @@
     h += '<div class="instrument-price">' + asset.price.toLocaleString() + '</div></div>';
 
     h += '<div class="input-box"><span class="label">Notional Value</span><span class="value">' + fmtK(step.notional) + '</span></div>';
-    h += '<div class="sub-label">Initial Margin Required: ' + (isNoMargin ? 'None (Real purchase)' : fmtK(imr)) + '</div>';
+    h += '<div class="sub-label">Initial Margin Required: ' + fmtK(imr) + (isNoMargin ? ' (fully paid)' : '') + '</div>';
 
     h += '<div class="leverage-badge' + (isNoMargin ? ' real-badge' : '') + '"><span class="lock">&#128274;</span> ' + (isNoMargin ? 'No Leverage — Real Stock (x1)' : 'Leverage: x' + lev + ' (auto-applied per BRD)') + '</div>';
 
@@ -1120,12 +1111,9 @@
       h += '<div class="detail-row"><span class="label">Overnight Fee</span><span class="value">-$' + (step.notional * 0.000078).toFixed(2) + '/day</span></div>';
     }
     h += '<div class="divider"></div>';
-    h += '<div class="detail-row"><span class="label">Initial Margin Requirement</span><span class="value">' + (isNoMargin ? '$0 (collateral)' : fmtK(imr)) + '</span></div>';
+    h += '<div class="detail-row"><span class="label">Initial Margin Requirement</span><span class="value">' + (isNoMargin ? fmtK(imr) + ' (fully paid)' : fmtK(imr)) + '</span></div>';
     if (!isNoMargin) {
       h += '<div class="detail-row"><span class="label">Maintenance Margin Req.</span><span class="value">' + fmtK(mmr) + '</span></div>';
-    }
-    if (isNoMargin) {
-      h += '<div class="detail-row"><span class="label">Cash Required</span><span class="value">' + fmtK(step.notional) + '</span></div>';
     }
     h += '<div class="detail-row"><span class="label">Available Margin</span><span class="value green">' + fmtK(prevRm) + '</span></div>';
     h += '<div class="detail-row"><span class="label">Projected Remaining</span><span class="value ' + (projectedRm >= 0 ? 'green' : 'red') + '">' + fmtK(projectedRm) + '</span></div>';
@@ -1184,7 +1172,7 @@
     var h = '<div class="summary-badge">';
     h += '<div class="sb-title">Scenario Complete</div>';
     h += '<div class="sb-val">' + fmtK(endRm) + '</div>';
-    h += '<div class="sb-sub">Remaining Margin (Buying Power)</div>';
+    h += '<div class="sb-sub">Remaining Margin</div>';
     h += '</div>';
 
     h += '<div class="margin-overview" style="margin:12px 24px;">';
